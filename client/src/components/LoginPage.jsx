@@ -1,12 +1,31 @@
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import Footer from './Footer.jsx'
 import Navbar from './Navbar.jsx'
+import {useAuth} from '../context/auth.jsx'
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+
+  const {LogIn} = useAuth();
+
+  const navigate = useNavigate();
+
+  const handlesubmit = async(e) => {
+    e.preventDefault();
+    try{
+      await LogIn(email,password);
+      navigate('/');
+    } catch (err){
+      console.error("Logging error: ", err.message);
+      setError("Credentials are Invalid");
+    }
+  }
 
   return (
     <motion.div
@@ -48,9 +67,18 @@ export default function LoginPage() {
             Sign in to continue practicing your pitch.
           </p>
 
+          {error && (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            >
+              {error}
+            </p>
+          )}
+
           <form
             className="mt-8 space-y-5"
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handlesubmit}
           >
             <div>
               <label
@@ -62,6 +90,8 @@ export default function LoginPage() {
               <input
                 id="login-email"
                 name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 autoComplete="email"
                 required
@@ -89,6 +119,8 @@ export default function LoginPage() {
                   id="login-password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                   required
                   className="w-full rounded-xl border border-white/10 bg-slate-950/80 py-3 pl-4 pr-12 text-slate-100 outline-none ring-violet-500/30 transition placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2"

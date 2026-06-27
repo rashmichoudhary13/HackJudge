@@ -1,12 +1,58 @@
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import Footer from './Footer.jsx'
 import Navbar from './Navbar.jsx'
+import { useAuth, auth } from '../context/auth.jsx'
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const[error, setError] = useState(null);
+
+  const navigate = useNavigate();
+  const {signIn} = useAuth();
+
+  const storeUserInfo = async (name, email) => {
+    try{
+      const token = await auth.currentUser.getIdToken();
+
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({name, email}),
+      });
+  
+      const data = await response.json();
+
+      if(!response.ok){
+        console.log("Failed to store data");
+      }
+
+      console.log("Signup page data: ", data.message);
+    } catch(err){
+      console.error("Error storing user: ", err.message);
+    }
+  }
+
+
+  const handlesubmit = async (e) => {
+    e.preventDefault();
+    try{
+      await signIn(name,email,password);
+      await storeUserInfo(name,email);
+      navigate('/login');
+    } catch (error) {
+      console.error("Error signing up: ", error.message);
+      setError("Email already in use");
+    }
+  }
 
   return (
     <motion.div
@@ -48,9 +94,18 @@ export default function SignupPage() {
             Start practicing with the AI judge in minutes.
           </p>
 
+          {error && (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            >
+              {error}
+            </p>
+          )}
+
           <form
             className="mt-8 space-y-5"
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handlesubmit}
           >
             <div>
               <label
@@ -60,10 +115,10 @@ export default function SignupPage() {
                 Full name
               </label>
               <input
-                id="signup-name"
                 name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 type="text"
-                autoComplete="name"
                 required
                 className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none ring-violet-500/30 transition placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2"
                 placeholder="Jane Doe"
@@ -77,10 +132,10 @@ export default function SignupPage() {
                 Email
               </label>
               <input
-                id="signup-email"
                 name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                autoComplete="email"
                 required
                 className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none ring-violet-500/30 transition placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2"
                 placeholder="you@example.com"
@@ -95,8 +150,9 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <input
-                  id="signup-password"
                   name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required

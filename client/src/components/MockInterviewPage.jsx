@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
 import Footer from './Footer.jsx'
 import MockInterviewForm from './MockInterviewForm.jsx'
 import Navbar from './Navbar.jsx'
@@ -12,17 +11,7 @@ export default function MockInterviewPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
-      <Navbar
-        variant="minimal"
-        trailing={
-          <Link
-            to="/"
-            className="text-sm font-medium text-slate-300 transition hover:text-white"
-          >
-            Back to home
-          </Link>
-        }
-      />
+      <Navbar />
 
       <main className="relative flex flex-1 items-start justify-center px-4 py-12 sm:px-6 md:py-16">
         <div

@@ -1,5 +1,7 @@
 import { useId, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FileUp, X } from 'lucide-react'
+import { auth } from '../context/auth'
 
 const ACCEPT_DECK =
   '.pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation'
@@ -14,11 +16,34 @@ const initialState = {
 }
 
 export default function MockInterviewForm({ className = '' }) {
+  const navigate = useNavigate()
   const formId = useId()
   const fileInputRef = useRef(null)
   const [values, setValues] = useState(initialState)
   const [file, setFile] = useState(null)
   const [fileError, setFileError] = useState('')
+  const [submitError, setSubmitError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const requiredFields = [
+    'projectTitle',
+    'problemStatement',
+    'solutionDescription',
+    'techStack',
+    'keyFeature',
+  ]
+
+  function validateForm() {
+    const emptyField = requiredFields.find(
+      (field) => !values[field]?.trim()
+    )
+    if (emptyField) {
+      setSubmitError('Please fill in all required fields before continuing.')
+      return false
+    }
+    setSubmitError('')
+    return true
+  }
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -53,11 +78,88 @@ export default function MockInterviewForm({ className = '' }) {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  function handleSubmit(e) {
+  async function uploadFile() {
+    if (!file) return undefined
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET_NAME);
+
+    try{
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if(!response.ok){
+        console.error("Failed to upload the file");
+      }
+
+      const cloudinaryData = await response.json();
+      
+      return cloudinaryData.secure_url;
+    }catch (err) {
+      console.log("File Error: ", err);
+    }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Wire to API / session later
-    const payload = { ...values, deckFile: file }
-    console.log('Mock interview form:', payload)
+    if (!validateForm()) return
+
+    if (!auth.currentUser) {
+      setSubmitError('You must be logged in to start a mock interview.')
+      return
+    }
+
+    setSubmitting(true)
+    setSubmitError('')
+
+    try {
+      const token = await auth.currentUser.getIdToken()
+      
+      const deckUrl = file ? await uploadFile() : "";
+
+      const payload = { ...values, deckUrl }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/project/details`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      )
+
+      if (!response.ok) {
+        setSubmitError('Failed to save project details. Please try again.')
+        return
+      }
+
+      const data = await response.json()
+      console.log("Frontend data: ",data.message);
+
+      navigate('/interview-room', {
+        state: {
+          projectTitle: values.projectTitle.trim(),
+          userName: auth.currentUser?.displayName?.split(' ')[0] || 'there',
+          projectId: data.projectId,
+          question: data.question,
+          interviewId: data.interviewId
+        },
+      })
+    } catch (err) {
+      console.log('Form error: ', err)
+      setSubmitError('Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inputClass =
@@ -68,7 +170,6 @@ export default function MockInterviewForm({ className = '' }) {
     <form
       className={`space-y-6 ${className}`}
       onSubmit={handleSubmit}
-      noValidate
     >
       <div>
         <label htmlFor={`${formId}-title`} className={labelClass}>
@@ -214,11 +315,18 @@ export default function MockInterviewForm({ className = '' }) {
         )}
       </div>
 
+      {submitError && (
+        <p className="text-sm text-red-400" role="alert">
+          {submitError}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="w-full rounded-xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-110"
+        disabled={submitting}
+        className="w-full rounded-xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Start mock interview
+        {submitting ? 'Saving…' : 'Start mock interview'}
       </button>
     </form>
   )
