@@ -2,8 +2,13 @@ import { motion } from 'framer-motion'
 import Footer from './Footer.jsx'
 import MockInterviewForm from './MockInterviewForm.jsx'
 import Navbar from './Navbar.jsx'
+import { useLocation } from 'react-router-dom'
 
 export default function MockInterviewPage() {
+
+  const location = useLocation();
+  const error = location.state?.error || null;
+  
   return (
     <motion.div
       className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-indigo-950/40 to-slate-950 text-slate-100 antialiased"

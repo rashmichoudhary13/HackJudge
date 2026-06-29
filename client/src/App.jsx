@@ -5,6 +5,8 @@ import LoginPage from './components/LoginPage.jsx'
 import InterviewRoomPage from './components/InterviewRoomPage.jsx'
 import MockInterviewPage from './components/MockInterviewPage.jsx'
 import SignupPage from './components/SignupPage.jsx'
+import ProcessingPage from './components/processingPage.jsx'
+import QuestionProcessingPage from './components/QuestionLoading.jsx'
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/processing" element={<ProcessingPage/>}/>
+      <Route path="/interview-processing" element={<QuestionProcessingPage/>}/>
     </Routes>
   )
 }

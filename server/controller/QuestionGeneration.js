@@ -101,7 +101,7 @@ export const generateQuestions = async (req, res) => {
 
         // Generating content
         const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash-lite",
+            model: process.env.GEMINI_MODEL,
             contents,
         });
 
@@ -128,3 +128,4 @@ export const generateQuestions = async (req, res) => {
         })
     }
 }
+

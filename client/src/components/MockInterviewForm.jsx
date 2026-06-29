@@ -12,7 +12,6 @@ const initialState = {
   solutionDescription: '',
   techStack: '',
   keyFeature: '',
-  githubLink: '',
 }
 
 export default function MockInterviewForm({ className = '' }) {
@@ -145,13 +144,10 @@ export default function MockInterviewForm({ className = '' }) {
       const data = await response.json()
       console.log("Frontend data: ",data.message);
 
-      navigate('/interview-room', {
+      navigate('/interview-processing', {
         state: {
-          projectTitle: values.projectTitle.trim(),
-          userName: auth.currentUser?.displayName?.split(' ')[0] || 'there',
           projectId: data.projectId,
-          question: data.question,
-          interviewId: data.interviewId
+          projectTitle: values.projectTitle.trim(),
         },
       })
     } catch (err) {
@@ -249,28 +245,6 @@ export default function MockInterviewForm({ className = '' }) {
           className={`${inputClass} resize-y min-h-[80px]`}
           placeholder="The one capability judges should remember from your pitch"
         />
-      </div>
-
-      <div>
-        <label htmlFor={`${formId}-github`} className={labelClass}>
-          GitHub link <span className="text-slate-500">(optional)</span>
-        </label>
-        <div className="relative">
-          <div
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
-            aria-hidden
-          />
-          <input
-            id={`${formId}-github`}
-            name="githubLink"
-            type="url"
-            inputMode="url"
-            value={values.githubLink}
-            onChange={handleChange}
-            className={`${inputClass} pl-10`}
-            placeholder="https://github.com/org/repo"
-          />
-        </div>
       </div>
 
       <div>

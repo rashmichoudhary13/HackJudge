@@ -4,8 +4,7 @@ import { Mic, MicOff, PhoneOff, Video, VideoOff, Volume2 } from 'lucide-react'
 import { auth } from '../context/auth'
 import recognition from '../context/speechRecognitionConfig';
 
-const WELCOME_MESSAGE =
-  'Hey! {name}, Welcome to the Mock Interview, I am your interviewer today'
+const INTERVIEW_TIME = 3 * 60 //5 min In seconds
 
 function InterviewerAvatar() {
   return (
@@ -26,12 +25,14 @@ export default function InterviewRoomPage() {
   const location = useLocation()
   const videoRef = useRef(null)
   const streamRef = useRef(null)
+  const timeUp = useRef(false);
+  const lastAnswer = useRef("");
 
   const projectTitle = location.state?.projectTitle || 'Product Design'
   const userName =
-    location.state?.userName ||
     auth.currentUser?.displayName?.split(' ')[0] ||
     'there'
+
   const projectId = location.state?.projectId || 'null';
   const firstQuestion = location.state?.question || "";
   const interviewId = location.state?.interviewId || 'null';
@@ -41,9 +42,8 @@ export default function InterviewRoomPage() {
   const [connected, setConnected] = useState(false)
   const [question, setQuestion] = useState(firstQuestion);
   const [transcript, setTranscript] = useState("");
-
-  const welcomeText = WELCOME_MESSAGE.replace('{name}', userName)
-  const questionText = `Question 1/5 : ${welcomeText}`
+  const [timeLeft, setTimeLeft] = useState(INTERVIEW_TIME);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     console.log("Question effect:", question);
@@ -61,6 +61,12 @@ export default function InterviewRoomPage() {
       utterance.pitch = 1;
 
       utterance.onend = () => {
+
+        if (timeUp.current) {
+          speakLastMessage();
+          return;
+        }
+
         startListening();
       };
 
@@ -104,6 +110,14 @@ export default function InterviewRoomPage() {
 
         if (!trimmed) return "";
 
+        lastAnswer.current = trimmed;
+
+        // Check if the time is up
+        if (timeUp.current) {
+          speakLastMessage();
+          return;
+        }
+
         fetchQuestion(trimmed);
 
         return "";
@@ -136,6 +150,12 @@ export default function InterviewRoomPage() {
 
       if (!response.ok) {
         console.log("Error in response: ", result.message);
+        navigate('/form', {
+          state: {
+            error: result.message
+          }
+        })
+        return;
       }
 
       const nxtquestion = result.question;
@@ -148,6 +168,46 @@ export default function InterviewRoomPage() {
       console.log("Question error: ", err);
     }
   };
+
+  // To keep track of the time
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          timeUp.current = true;
+
+          return 0;
+        }
+
+        return prev - 1;
+      })
+    }, 1000)
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const speakLastMessage = () => {
+    const utterance = new SpeechSynthesisUtterance("OOps! The time is up. Thankyou for sharing your project.")
+
+    utterance.onend = () => {
+      endInterview();
+    }
+
+    speechSynthesis.speak(utterance);
+  }
+
+  const endInterview = async () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    speechSynthesis.cancel();
+    recognition.abort();
+    navigate('/processing', {
+      state:{
+        lastAnswer,
+        interviewId
+      }
+    })
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -210,10 +270,7 @@ export default function InterviewRoomPage() {
   }, [cameraOn])
 
   function handleEndCall() {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    speechSynthesis.cancel();
-    recognition.abort();
-    navigate('/dashboard')
+    endInterview();
   }
 
   return (
@@ -236,11 +293,6 @@ export default function InterviewRoomPage() {
             {connected ? 'Connected' : 'Connecting…'}
           </span>
         </div>
-
-        {/* Question */}
-        <p className="mb-5 text-center text-sm text-slate-600 sm:text-base">
-          {questionText}
-        </p>
 
         {/* Video panels */}
         <div className="grid gap-4 sm:grid-cols-2">
@@ -333,7 +385,7 @@ export default function InterviewRoomPage() {
             </div>
             <div className="min-w-0 space-y-3 text-sm leading-relaxed text-slate-200">
               {!question && !transcript ? (
-                <p className="text-slate-400">Waiting for interviewer…</p>
+                <p className="text-red-400">{error}</p>
               ) : (
                 <>
                   {question && (
@@ -341,7 +393,7 @@ export default function InterviewRoomPage() {
                       <p className="mb-1 text-xs font-medium text-slate-400">
                         "AI Interviewer"
                       </p>
-                      <p>{question}</p>
+                      <p>{timeUp.current ? "OOps! The time is up. Thankyou for sharing your project." : question}</p>
                     </div>
                   )}
                   {transcript && (
