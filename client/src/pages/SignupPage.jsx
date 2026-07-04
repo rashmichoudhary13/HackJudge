@@ -2,8 +2,8 @@ import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import Footer from './Footer.jsx'
-import Navbar from './Navbar.jsx'
+import Footer from '../components/Footer.jsx'
+import Navbar from '../components/Navbar.jsx'
 import { useAuth, auth } from '../context/auth.jsx'
 
 export default function SignupPage() {
@@ -56,7 +56,7 @@ export default function SignupPage() {
 
   return (
     <motion.div
-      className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-indigo-950/40 to-slate-950 text-slate-100 antialiased"
+      className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 via-indigo-50/20 to-white text-slate-800 antialiased"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -64,11 +64,11 @@ export default function SignupPage() {
       <Navbar
         variant="minimal"
         trailing={
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-600">
             Already have an account?{' '}
             <Link
               to="/login"
-              className="font-semibold text-violet-300 transition hover:text-white"
+              className="font-semibold text-violet-650 transition hover:text-violet-855"
             >
               Log in
             </Link>
@@ -78,19 +78,19 @@ export default function SignupPage() {
 
       <main className="relative flex flex-1 items-center justify-center px-4 py-16 sm:px-6">
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,92,246,0.35),transparent)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,92,246,0.1),transparent)]"
           aria-hidden
         />
         <motion.div
-          className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl shadow-violet-950/40 backdrop-blur-sm"
+          className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 backdrop-blur-sm"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, duration: 0.45 }}
         >
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Create your account
           </h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-slate-600">
             Start practicing with the AI judge in minutes.
           </p>
 
@@ -110,7 +110,7 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="signup-name"
-                className="mb-1.5 block text-sm font-medium text-slate-300"
+                className="mb-1.5 block text-sm font-medium text-slate-700"
               >
                 Full name
               </label>
@@ -120,14 +120,14 @@ export default function SignupPage() {
                 onChange={(e) => setName(e.target.value)}
                 type="text"
                 required
-                className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none ring-violet-500/30 transition placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none ring-violet-500/30 transition placeholder:text-slate-400 focus:border-violet-500/65 focus:bg-white focus:ring-2"
                 placeholder="Jane Doe"
               />
             </div>
             <div>
               <label
                 htmlFor="signup-email"
-                className="mb-1.5 block text-sm font-medium text-slate-300"
+                className="mb-1.5 block text-sm font-medium text-slate-700"
               >
                 Email
               </label>
@@ -137,14 +137,14 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 required
-                className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none ring-violet-500/30 transition placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none ring-violet-500/30 transition placeholder:text-slate-400 focus:border-violet-500/65 focus:bg-white focus:ring-2"
                 placeholder="you@example.com"
               />
             </div>
             <div>
               <label
                 htmlFor="signup-password"
-                className="mb-1.5 block text-sm font-medium text-slate-300"
+                className="mb-1.5 block text-sm font-medium text-slate-700"
               >
                 Password
               </label>
@@ -157,13 +157,13 @@ export default function SignupPage() {
                   autoComplete="new-password"
                   required
                   minLength={8}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 py-3 pl-4 pr-12 text-slate-100 outline-none ring-violet-500/30 transition placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-4 pr-12 text-slate-900 outline-none ring-violet-500/30 transition placeholder:text-slate-400 focus:border-violet-500/65 focus:bg-white focus:ring-2"
                   placeholder="At least 8 characters"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -174,24 +174,24 @@ export default function SignupPage() {
                 </button>
               </div>
             </div>
-            <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-400">
+            <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-600">
               <input
                 type="checkbox"
                 required
-                className="mt-1 size-4 rounded border-white/20 bg-slate-950 text-violet-500 focus:ring-violet-500/40"
+                className="mt-1 size-4 rounded border-slate-300 bg-white text-violet-500 focus:ring-violet-500/40"
               />
               <span>
                 I agree to the{' '}
                 <button
                   type="button"
-                  className="font-medium text-violet-300 hover:text-white"
+                  className="font-medium text-violet-650 hover:text-violet-850"
                 >
                   Terms
                 </button>{' '}
                 and{' '}
                 <button
                   type="button"
-                  className="font-medium text-violet-300 hover:text-white"
+                  className="font-medium text-violet-650 hover:text-violet-855"
                 >
                   Privacy Policy
                 </button>

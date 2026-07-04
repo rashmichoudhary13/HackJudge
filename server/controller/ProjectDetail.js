@@ -9,6 +9,7 @@ export const addProjectDetails = async (req, res) => {
             techStack,
             keyFeature,
             deckUrl,
+            judge
         } = req.body;
 
         const uid = req.user.uid;
@@ -21,7 +22,9 @@ export const addProjectDetails = async (req, res) => {
             Description: solutionDescription,
             TechStack: techStack,
             Feature: keyFeature,
-            DeckUrl: deckUrl
+            DeckUrl: deckUrl,
+            judgeType: judge,
+            fileUri: ""
         })
 
         res.status(200).json({

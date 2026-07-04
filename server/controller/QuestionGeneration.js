@@ -1,8 +1,8 @@
 import ai from "../config/gemini.js";
-import fs from "fs";
+import { judgeConfig } from "../config/judgeConfig.js";
 import { db } from '../config/firebaseAdmin.js';
 
-export const generateQuestions = async (req, res) => {
+export const processInterview = async (req, res) => {
     try {
 
         const projectId = req.params.id;
@@ -29,11 +29,20 @@ export const generateQuestions = async (req, res) => {
 
         conversation[conversation.length - 1].candidateAnswer = answer;
 
+        const judge = project.judgeType;
+
+        const config = judgeConfig[judge];
 
         const prompt = `
             ## Role
 
             You are an experienced Hackathon Judge conducting an ongoing hackathon interview.
+
+            Your judging focus:
+            ${config.roleFocus}
+
+            Your questioning style:
+            ${config.questionStyle}
 
             ## Task
 
@@ -44,59 +53,61 @@ export const generateQuestions = async (req, res) => {
             * Project Description: ${project.Description}
             * Tech Stack: ${project.TechStack}
             * Features: ${project.Feature}
-            * Supporting Documents: ${project.DeckUrl}
             * Conversation History: ${JSON.stringify(conversation, null, 2)}
 
-            Use the project details and conversation history to continue the interview.
+            - Use the structured project information as the primary context. 
+            - Analyze the supporting document to gather additional technical insights such as architecture, workflows, design decisions, implementation details, diagrams, and future enhancements. 
+            - Use conversation history to analyze the candidate answer.
+            Use all three sources together to generate relevant judging questions. Do not ask questions based on assumptions or invent details that are not present.
 
-            Judge the project using these criteria:
+            Ask the questions on these criteria and also follow this evaluation priority in order:
 
-            * Innovation
-            * Feasibility
-            * Impact & Benefits
-            * Implementation (engineering, architecture, technical decisions)
+            * Innovation (Highest priority)
+            * Impact & Benefits (Real-world value and usefulness)
+            * Feasibility (Practicality, complexity, and ability to build)
+            * Implementation (engineering, architecture, technical decisions) (Technical Depth)
             * Design & User Experience
 
             Evaluate the candidate's **most recent answer**.
 
             * If the answer is technically sound, complete, and well justified, move to another judging criterion by asking one new question.
             * If the answer is vague, incomplete, incorrect, or lacks justification, ask one follow-up question on the same topic to better evaluate the candidate.
+            
+            ## QUESTION STYLE RULES (VERY IMPORTANT)
+
+            - Ask questions in simple, spoken English (like a real interviewer)
+            - Keep each question SHORT (max 1–2 sentences)
+            - Use simple words (avoid complex vocabulary or academic tone)
+            - Do NOT combine multiple questions into one
+            - Do NOT explain context before asking the question
+            - Do NOT use long introductions or background descriptions
+            - Do NOT write essay-style or paragraph-style questions
+
+            ## GOOD EXAMPLES:
+            - "How did you decide to use LGBMRanker for this problem?"
+            - "What happens if your API data is outdated?"
+            - "How does your system find new business opportunities?"
 
             ## Instructions
 
             * Behave like a professional hackathon judge.
             * Use the conversation history to avoid repeating questions.
-            * Base every question on the project details, supporting documents, and previous responses.
-            * Ask only one question.
-            * Do not provide feedback, hints, scores, or an evaluation summary.
+            * Ask only one question at a time.
         `;
 
         const contents = [
             {
                 text: prompt,
             }
-        ];
+        ]
 
-        if (project.DeckUrl) {
-            const fileResponse = await fetch(project.DeckUrl);
-            const buffer = await fileResponse.arrayBuffer();
-
-            fs.writeFileSync("temp.pdf", Buffer.from(buffer));
-
-            //Upload file to gemini
-            const uploadedFile = await ai.files.upload({
-                file: "temp.pdf",
-                config: {
-                    mimeType: "application/pdf",
-                },
-            });
-
+        if(project.fileUri){
             contents.push({
                 fileData: {
-                    fileUri: uploadedFile.uri,
+                    fileUri: project.fileUri,
                     mimeType: "application/pdf",
                 },
-            });
+            })
         }
 
         // Generating content

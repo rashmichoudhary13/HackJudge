@@ -10,8 +10,9 @@ const QuestionProcessingPage = () => {
 
     useEffect(() => {
         const fetchFirstQuestion = async() => {
+          console.log("fetching questions")
             try {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/firstquestions`, {
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/startInterview`, {
                   method: "GET",
                   headers: {
                     "Content-Type": "application/json",
@@ -24,6 +25,7 @@ const QuestionProcessingPage = () => {
                 }
 
                 const data = await response.json();
+                console.log("got question")
 
                 navigate('/interview-room', {
                     state: {
@@ -57,12 +59,12 @@ const QuestionProcessingPage = () => {
   
           {/* Heading */}
           <h1 className="text-3xl font-bold text-gray-800">
-            Processing...
+            Setting up your interview...
           </h1>
   
           {/* Description */}
           <p className="mt-4 text-gray-500 leading-relaxed">
-            We're analyzing your interview and generating your report.
+            We're preparing your AI Judge panel and generating your first question.
             This may take a few moments.
           </p>
   
@@ -75,7 +77,7 @@ const QuestionProcessingPage = () => {
   
           {/* Optional Info */}
           <div className="mt-10 rounded-xl bg-green-50 p-4 text-sm text-green-700">
-            Please don't close this window while your results are being prepared.
+            Please don't close this window while your session is being initialized.
           </div>
         </div>
       </div>

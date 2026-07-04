@@ -50,6 +50,8 @@ export default function InterviewRoomPage() {
 
     if (question) {
       speak(question);
+    } else {
+      navigate('/form');
     }
   }, [question]);
 
@@ -133,7 +135,7 @@ export default function InterviewRoomPage() {
   const fetchQuestion = async (answer) => {
     try {
       console.log("1");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/questions`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/processInterview`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -188,6 +190,7 @@ export default function InterviewRoomPage() {
   }, []);
 
   const speakLastMessage = () => {
+    console.log("Inside speak last message")
     const utterance = new SpeechSynthesisUtterance("OOps! The time is up. Thankyou for sharing your project.")
 
     utterance.onend = () => {
@@ -198,11 +201,12 @@ export default function InterviewRoomPage() {
   }
 
   const endInterview = async () => {
+    console.log("Inside end interview");
     streamRef.current?.getTracks().forEach((track) => track.stop())
     speechSynthesis.cancel();
     recognition.abort();
     navigate('/processing', {
-      state:{
+      state: {
         lastAnswer,
         interviewId
       }

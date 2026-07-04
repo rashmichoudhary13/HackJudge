@@ -12,7 +12,10 @@ const initialState = {
   solutionDescription: '',
   techStack: '',
   keyFeature: '',
+  judge: 'Hackathon',
 }
+
+const categories = ["Technical", "Product", "Business", "AI/ML", "Hackathon"];
 
 export default function MockInterviewForm({ className = '' }) {
   const navigate = useNavigate()
@@ -60,7 +63,7 @@ export default function MockInterviewForm({ className = '' }) {
       f.type === 'application/pdf' ||
       f.type === 'application/vnd.ms-powerpoint' ||
       f.type ===
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
       /\.(pdf|ppt|pptx)$/i.test(f.name)
     if (!ok) {
       setFileError('Please upload a PDF or PowerPoint file (.pdf, .ppt, .pptx).')
@@ -85,7 +88,7 @@ export default function MockInterviewForm({ className = '' }) {
     formData.append("file", file);
     formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET_NAME);
 
-    try{
+    try {
       const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
         {
           method: "POST",
@@ -93,14 +96,14 @@ export default function MockInterviewForm({ className = '' }) {
         }
       );
 
-      if(!response.ok){
+      if (!response.ok) {
         console.error("Failed to upload the file");
       }
 
       const cloudinaryData = await response.json();
-      
+
       return cloudinaryData.secure_url;
-    }catch (err) {
+    } catch (err) {
       console.log("File Error: ", err);
     }
   }
@@ -119,7 +122,7 @@ export default function MockInterviewForm({ className = '' }) {
 
     try {
       const token = await auth.currentUser.getIdToken()
-      
+
       const deckUrl = file ? await uploadFile() : "";
 
       const payload = { ...values, deckUrl }
@@ -142,7 +145,7 @@ export default function MockInterviewForm({ className = '' }) {
       }
 
       const data = await response.json()
-      console.log("Frontend data: ",data.message);
+      console.log("Frontend data: ", data.message);
 
       navigate('/interview-processing', {
         state: {
@@ -159,8 +162,8 @@ export default function MockInterviewForm({ className = '' }) {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none ring-violet-500/30 transition placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2'
-  const labelClass = 'mb-1.5 block text-sm font-medium text-slate-300'
+    'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none ring-violet-500/30 transition placeholder:text-slate-400 focus:border-violet-500/60 focus:bg-white focus:ring-2'
+  const labelClass = 'mb-1.5 block text-sm font-medium text-slate-700'
 
   return (
     <form
@@ -248,6 +251,28 @@ export default function MockInterviewForm({ className = '' }) {
       </div>
 
       <div>
+        <label htmlFor={`${formId}-feature`} className={labelClass}>
+          Select Judge <span className="text-red-400">*</span>
+        </label>
+
+        <div className='flex justify-between'>
+          {categories.map((category) => (
+            <div key={category}>
+              <input
+                type="radio"
+                name="judge"
+                value={category}
+                checked={values.judge === category}
+                onChange={handleChange}
+              />
+            
+              <label> {category === "Hackathon" ? "Default" : category } </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
         <span className={labelClass}>Deck upload (PDF or PowerPoint)</span>
         <p className="mb-2 text-xs text-slate-500">
           .pdf, .ppt, or .pptx — optional if you will share screen live instead.
@@ -255,9 +280,9 @@ export default function MockInterviewForm({ className = '' }) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <label
             htmlFor={`${formId}-deck`}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-violet-500/40 hover:bg-slate-900/80 sm:min-w-[200px]"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-650 transition hover:border-violet-500/40 hover:bg-slate-100 sm:min-w-[200px]"
           >
-            <FileUp className="h-4 w-4 text-violet-400" aria-hidden />
+            <FileUp className="h-4 w-4 text-violet-600" aria-hidden />
             Choose file
           </label>
           <input
@@ -269,12 +294,12 @@ export default function MockInterviewForm({ className = '' }) {
             className="sr-only"
           />
           {file && (
-            <div className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-slate-300">
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
               <span className="truncate">{file.name}</span>
               <button
                 type="button"
                 onClick={clearFile}
-                className="shrink-0 rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white"
+                className="shrink-0 rounded-lg p-1 text-slate-500 hover:bg-slate-200 hover:text-slate-800"
                 aria-label="Remove file"
               >
                 <X className="h-4 w-4" />
