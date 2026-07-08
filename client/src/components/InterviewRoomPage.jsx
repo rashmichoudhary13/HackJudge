@@ -36,8 +36,8 @@ function InterviewerAvatar({ status }) {
         />
 
         {/* Avatar circle */}
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-600 shadow-lg shadow-blue-500/40">
-          <span className="text-3xl font-bold text-white">S</span>
+        <div className="relative flex h-20 w-30 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-600 shadow-lg shadow-blue-500/40">
+          <img src="/judge.jpg" className='w-30 rounded-full object-cover' />
         </div>
       </div>
 

@@ -101,13 +101,6 @@ export default function LandingPage() {
                 Start Mock Interview
                 <ArrowRight className="h-5 w-5" aria-hidden />
               </Link>
-              <a
-                href="#demo"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-4 text-base font-semibold text-slate-800 backdrop-blur-sm transition hover:border-slate-350 hover:bg-slate-50 sm:w-auto"
-              >
-                <Play className="h-5 w-5 fill-current" aria-hidden />
-                Watch Demo
-              </a>
             </motion.div>
           </div>
         </section>
@@ -126,248 +119,264 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 4-in-1 Capability Suite */}
+        {/* 4-Step capability Suite */}
         <section
           id="features"
-          className="scroll-mt-24 border-t border-slate-100 bg-white/50 px-4 py-20 sm:px-6 md:py-10"
+          className="scroll-mt-24 border-t border-slate-100 bg-white/50 px-4 py-20 sm:px-6 md:py-12"
         >
           <div className="mx-auto max-w-7xl">
+
             <motion.div
-              className="mx-auto max-w-2xl text-center"
+              className="mx-auto max-w-2xl text-center pb-10"
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.45 }}
             >
               <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                4-in-1 Hackathon Rehearsal Suite
+                4-Step Hackathon Rehearsal Suite
               </h2>
               <p className="mt-4 text-slate-650">
-                Everything you need to debug your presentation, strengthen technical architecture narratives, and practice handling tough QA.
+                A simple and structured process to prepare your pitch, test your project with specialized judges, and ace your Q&A.
               </p>
             </motion.div>
-            <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   icon: FileText,
-                  title: 'Stack-Aware Reading',
-                  desc: 'Ingests your README, codebase details, and pitch slides. AI learns your database, framework, and APIs to ask hyper-specific technical questions.',
-                  badge: 'Step 1'
+                  step: 'Step 1',
+                  title: 'Submit Project Details',
+                  desc: 'Fill project details and project slides to customize the AI’s context.'
                 },
                 {
                   icon: UserCog,
-                  title: 'Targeted Judge Personas',
-                  desc: 'Practice with specialized judges: Aria (VC/Investor), Sophia (CTO/Tech Architect), or Dev (UX/Product Designer) to test every aspect of your project.',
-                  badge: 'Step 2'
+                  step: 'Step 2',
+                  title: 'Select Panel Focus',
+                  desc: 'Practice with different Judges: Technical, product, business.'
                 },
                 {
                   icon: Mic2,
-                  title: 'Voice-Enabled QA Simulator',
-                  desc: 'Simulate the live panel pressure. Speak naturally—our real-time speech recognizer transcribes and passes answers directly to the AI.',
-                  badge: 'Step 3'
+                  step: 'Step 3',
+                  title: 'Smart Voice Interview',
+                  desc: 'Smart voice judging session with real-time speech responses.'
                 },
                 {
                   icon: Sparkles,
-                  title: 'Hackathon Rubric Scorecard',
-                  desc: 'Receive immediate scores based on real hackathon criteria: Innovation, Technical Depth, UI/UX, Feasibility, and Q&A delivery.',
-                  badge: 'Step 4'
+                  step: 'Step 4',
+                  title: 'Instant Report',
+                  desc: 'Get your report and rubric scorecard with clear improvement points.'
                 },
-              ].map(({ icon: Icon, title, desc, badge }, i) => (
+              ].map(({ icon: Icon, step, title, desc }, i) => (
                 <motion.article
-                  key={title}
-                  className="group relative rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-100/50 transition hover:border-violet-500/30 hover:shadow-violet-100/40"
+                  key={step}
+                  className={`group relative rounded-2xl bg-white px-6 py-10 text-center shadow-lg shadow-slate-100/50 transition-all duration-300 ${i === 0 ? '-rotate-2 border border-slate-200 hover:border-emerald-500 hover:rotate-0 hover:scale-[1.03] hover:shadow-emerald-500/10' :
+                    i === 1 ? 'rotate-1 border border-slate-200 hover:border-emerald-500 hover:rotate-0 hover:scale-[1.03] hover:shadow-emerald-500/10' :
+                      i === 2 ? '-rotate-1 border-2 border-slate-200 hover:border-emerald-500 hover:rotate-0 hover:scale-[1.03] hover:shadow-emerald-500/15' :
+                        'rotate-2 border border-slate-200 hover:border-emerald-500 hover:rotate-0 hover:scale-[1.03] hover:shadow-emerald-500/10'
+                    }`}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
                   transition={{ duration: 0.4, delay: i * 0.08 }}
                 >
-                  <span className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full">
-                    {badge}
-                  </span>
-                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-650 ring-1 ring-violet-100 transition group-hover:bg-violet-100">
-                    <Icon className="h-6 w-6" aria-hidden />
+                  {/* Top floating icon badge */}
+                  <div className={`absolute -top-6 left-1/2 -translate-x-1/2 flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm transition-all duration-300 ${i === 2
+                    ? 'border-2 border-emerald-500 text-emerald-600'
+                    : 'border border-slate-200 text-slate-500 group-hover:border-emerald-500 group-hover:text-emerald-600'
+                    }`}>
+                    <Icon className="h-5 w-5" aria-hidden />
                   </div>
-                  <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
-                  <p className="mt-3 leading-relaxed text-xs text-slate-600">{desc}</p>
+
+                  <span className={`text-[10px] font-bold uppercase tracking-wider transition duration-300 ${i === 2 ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-500'
+                    }`}>
+                    {step}
+                  </span>
+                  <h3 className="mt-3 text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition duration-300">{title}</h3>
+                  <p className="mt-2.5 leading-relaxed text-xs text-slate-500">{desc}</p>
                 </motion.article>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Judge Persona Panels Selection */}
-        <section className="border-t border-slate-100 px-4 py-20 sm:px-6 md:py-12">
+        {/* Advanced AI Capabilities */}
+        <section className="border-t border-slate-100 bg-slate-50/10 px-4 py-20 sm:px-6 md:py-12">
           <div className="mx-auto max-w-7xl">
-            <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
-              <div className="lg:col-span-5">
-                <span className="text-xs font-bold uppercase tracking-widest text-violet-600">Simulate Real Pressure</span>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                  Choose from specialized AI Judge panels
-                </h2>
-                <p className="mt-4 text-slate-600 leading-relaxed">
-                  Different hackathons place priority on different criteria. Toggle judge personas to align with what your upcoming panel values the most.
-                </p>
-                <div className="mt-8 flex flex-col gap-4">
-                  {[
-                    { name: 'Aria — The VC / Business Critic', focus: 'Evaluates market viability, business model scaling, and pitch delivery.' },
-                    { name: 'Sophia — The CTO / Technical Architect', focus: 'Grills you on codebase choices, API bottlenecks, security, and hosting.' },
-                    { name: 'Dev — The Product & UX Designer', focus: 'Examines design consistency, accessibility, user flows, and demo usability.' },
-                  ].map((item) => (
-                    <div key={item.name} className="flex items-start gap-3 rounded-xl border border-slate-150 bg-white p-4 shadow-sm">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-bold text-violet-600">✓</span>
-                      <div>
-                        <h4 className="text-sm font-semibold text-slate-900">{item.name}</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">{item.focus}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Graphic Simulator Room Mockup */}
-              <div className="lg:col-span-7">
-                <div className="rounded-2xl border border-slate-200 bg-gradient-to-tr from-slate-50 to-white p-6 shadow-2xl shadow-slate-100">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="h-3.5 w-3.5 rounded-full bg-violet-500 animate-pulse" />
-                      <span className="text-xs font-semibold text-slate-700">Sophia's Panel Room — Live Session</span>
-                    </div>
-                    <span className="text-[11px] font-medium text-slate-400">01:45 / 03:00</span>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Speaker 1 (AI) */}
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500 text-xs font-bold text-white">S</div>
-                      <div className="rounded-2xl bg-slate-100 px-4 py-3 text-xs text-slate-700 leading-relaxed max-w-[85%]">
-                        "Your slide deck mentions utilizing PostgreSQL for storing transit routes. Given your real-time mapping goals, why did you choose standard SQL over a Graph Database like Neo4j? How do you handle route caching?"
-                      </div>
-                    </div>
-
-                    {/* Speaker 2 (User) */}
-                    <div className="flex items-start gap-3 justify-end">
-                      <div className="rounded-2xl bg-violet-600 px-4 py-3 text-xs text-white leading-relaxed max-w-[85%]">
-                        "We chose PostgreSQL because of its PgRouting extension, which allowed us to calculate shortest paths directly via SQL queries. However, for route caching, we implement Redis to store recent calculations and limit DB load."
-                      </div>
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-750">Me</div>
-                    </div>
-                  </div>
-
-                  {/* Speech Level Indicator */}
-                  <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
-                    <div className="flex items-center gap-1.5">
-                      {[3, 6, 2, 8, 4, 7, 5, 3].map((h, i) => (
-                        <span key={i} className="w-1 rounded-full bg-violet-500" style={{ height: `${h * 3}px` }} />
-                      ))}
-                      <span className="text-[10px] text-slate-400 ml-2">Audio streaming active</span>
-                    </div>
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">Speech Detected</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Detailed Scorecard & Reports */}
-        <section className="border-t border-slate-100 bg-slate-50/30 px-4 py-20 sm:px-6 md:py-16">
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
-              <div className="lg:col-span-6 lg:order-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-violet-600">Actionable Diagnostics</span>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                  ATS-style Rubric Scores & Edge Case Reports
-                </h2>
-                <p className="mt-4 text-slate-600 leading-relaxed">
-                  Get a complete breakdown of your demo's strength before presenting live. PitchPerfect AI provides a diagnostic sheet highlighting exactly where your presentation needs work.
-                </p>
-                <ul className="mt-6 space-y-3.5 text-sm text-slate-600">
-                  <li className="flex gap-2.5">
-                    <span className="text-violet-500 font-bold">✓</span>
-                    <div>
-                      <strong>Innovation Audit:</strong> Verify if your product represents a true novelty or is a clone of existing apps.
-                    </div>
-                  </li>
-                  <li className="flex gap-2.5">
-                    <span className="text-violet-500 font-bold">✓</span>
-                    <div>
-                      <strong>Architecture Validation:</strong> AI points out loopholes in your security, hosting, or API endpoints.
-                    </div>
-                  </li>
-                  <li className="flex gap-2.5">
-                    <span className="text-violet-500 font-bold">✓</span>
-                    <div>
-                      <strong>Delivery Critique:</strong> Feedback on your verbal pace, speech pauses, and response confidence.
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Scorecard Visual Mockup */}
-              <div className="lg:col-span-6 lg:order-1">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-100/60">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wider text-slate-400">Mock Performance Report</h3>
-                  <div className="space-y-4">
-                    {[
-                      { criteria: 'Originality & Innovation', score: 8.8, color: 'bg-violet-500' },
-                      { criteria: 'Technical Implementation Depth', score: 7.2, color: 'bg-indigo-500' },
-                      { criteria: 'Usability & Demo Quality', score: 9.4, color: 'bg-fuchsia-500' },
-                      { criteria: 'QA Handling & Delivery', score: 6.8, color: 'bg-rose-500' },
-                    ].map((item) => (
-                      <div key={item.criteria}>
-                        <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                          <span>{item.criteria}</span>
-                          <span>{item.score} / 10</span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                          <motion.div
-                            className={`h-full ${item.color} rounded-full`}
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${item.score * 10}%` }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 rounded-xl bg-amber-50 border border-amber-100 p-4 text-xs text-amber-800 leading-relaxed">
-                    <strong>Critical Improvement:</strong> "QA score was lowered due to hesitation when explaining database scaling. Consider preparing a slide detailing your horizontal scaling plans."
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Rehearse Call to Action */}
-        <section
-          id="demo"
-          className="border-t border-slate-100 px-4 py-10 sm:px-6 bg-white"
-        >
-          <motion.div
-            className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-gradient-to-r from-violet-50 via-white to-indigo-50 p-10 text-center shadow-xl shadow-indigo-50/50"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.45 }}
-          >
-            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-              Ready to rehearse like it is finals day?
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl text-center mb-16">
+              Advanced AI <span className="text-emerald-600">Capabilities</span>
             </h2>
-            <p className="mt-3 text-slate-650">
-              Join thousands of builders sharpening their pitch with
-              PitchPerfect AI.
-            </p>
-            <Link
-              to="/form"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 px-8 py-4 text-base font-semibold text-white shadow-xl shadow-violet-500/20 transition hover:brightness-110"
-            >
-              Start Mock Interview
-              <ArrowRight className="h-5 w-5" aria-hidden />
-            </Link>
-          </motion.div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {[
+                {
+                  title: "AI Answer Evaluation",
+                  desc: "Scores communication, technical accuracy, and confidence. Provides score based on conversation, summary, and improvement advice.",
+                  icon: Sparkles,
+                  illustration: (
+                    <svg viewBox="0 0 200 150" className="w-full h-full text-slate-400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="100" cy="75" r="45" fill="#EEF2F6" />
+                      <rect x="35" y="55" width="24" height="24" rx="6" fill="#6366F1" />
+                      <rect x="42" y="51" width="10" height="4" rx="1" fill="#4338CA" />
+                      <circle cx="43" cy="65" r="2.5" fill="white" />
+                      <circle cx="51" cy="65" r="2.5" fill="white" />
+                      <line x1="42" y1="71" x2="52" y2="71" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                      <path d="M30 85C30 81 33 79 37 79H57C61 79 64 81 64 85V95H30V85Z" fill="#818CF8" />
+                      <circle cx="155" cy="63" r="14" fill="#F472B6" />
+                      <path d="M141 63C141 55 147 49 155 49C163 49 169 55 169 63V69H141V63Z" fill="#DB2777" />
+                      <path d="M141 85C141 80 145 77 150 77H160C165 77 169 80 169 85V95H141V85Z" fill="#F472B6" />
+                      <path d="M60 40C60 34 65 30 70 30H85C90 30 94 34 94 40V48C94 53 90 57 85 57H75L68 62V57C64 57 60 53 60 48V40Z" fill="#FBBF24" />
+                      <text x="77" y="49" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle">!</text>
+                      <path d="M140 40C140 34 135 30 130 30H115C110 30 106 34 106 40V48C106 53 110 57 115 57H125L132 62V57C136 57 140 53 140 48V40Z" fill="#3B82F6" />
+                      <text x="123" y="49" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle">?</text>
+                    </svg>
+                  )
+                },
+                {
+                  title: "Follow-up Questions",
+                  desc: "AI dynamically asks contextual follow-up questions based on your previous answers to drill into technical depth.",
+                  icon: Target,
+                  illustration: (
+                    <svg viewBox="0 0 200 150" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="100" cy="75" r="45" fill="#ECFDF5" />
+                      <rect x="75" y="25" width="50" height="26" rx="10" fill="#10B981" />
+                      <text x="100" y="42" fill="white" fontSize="10" fontWeight="bold" textAnchor="middle">Question</text>
+                      <path d="M100 51V75" stroke="#10B981" strokeWidth="2" strokeDasharray="3 3" />
+                      <path d="M60 75H140" stroke="#10B981" strokeWidth="2" />
+                      <path d="M60 75V95" stroke="#10B981" strokeWidth="2" />
+                      <path d="M140 75V95" stroke="#10B981" strokeWidth="2" />
+                      <rect x="35" y="95" width="50" height="22" rx="8" fill="#3B82F6" />
+                      <text x="60" y="108" fill="white" fontSize="8" fontWeight="medium" textAnchor="middle">Follow-up A</text>
+                      <rect x="115" y="95" width="50" height="22" rx="8" fill="#6366F1" />
+                      <text x="140" y="108" fill="white" fontSize="8" fontWeight="medium" textAnchor="middle">Follow-up B</text>
+                    </svg>
+                  )
+                },
+                {
+                  title: "Multiple Attempts",
+                  desc: "Practice multiple times on the same project and track your history and progress scores over time.",
+                  icon: Zap,
+                  illustration: (
+                    <svg viewBox="0 0 200 150" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="100" cy="75" r="45" fill="#EEF2F6" />
+                      <rect x="65" y="40" width="60" height="75" rx="8" fill="white" stroke="#CBD5E1" strokeWidth="2" />
+                      <line x1="75" y1="55" x2="115" y2="55" stroke="#E2E8F0" strokeWidth="3" strokeLinecap="round" />
+                      <line x1="75" y1="65" x2="105" y2="65" stroke="#E2E8F0" strokeWidth="3" strokeLinecap="round" />
+                      <rect x="80" y="55" width="60" height="75" rx="8" fill="white" stroke="#6366F1" strokeWidth="2" />
+                      <line x1="90" y1="70" x2="130" y2="70" stroke="#818CF8" strokeWidth="3" strokeLinecap="round" />
+                      <line x1="90" y1="80" x2="120" y2="80" stroke="#818CF8" strokeWidth="3" strokeLinecap="round" />
+                      <rect x="108" y="93" width="24" height="12" rx="4" fill="#E0E7FF" />
+                      <text x="120" y="102" fill="#4F46E5" fontSize="7" fontWeight="bold" textAnchor="middle">8/10</text>
+                      <path d="M50 85C50 65 65 50 85 50" stroke="#818CF8" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 3" />
+                      <path d="M80 46L86 50L80 54" stroke="#818CF8" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )
+                },
+                {
+                  title: "Timer Based Simulation",
+                  desc: "Face the pressure of real hackathons with a real-time countdown timer in our live judging room.",
+                  icon: Target,
+                  illustration: (
+                    <svg viewBox="0 0 200 150" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="100" cy="75" r="45" fill="#FFFBEB" />
+                      <circle cx="100" cy="75" r="35" stroke="#F59E0B" strokeWidth="3" strokeDasharray="6 3" />
+                      <circle cx="100" cy="75" r="30" fill="white" stroke="#FBBF24" strokeWidth="2" />
+                      <path d="M100 75V55" stroke="#D97706" strokeWidth="3" strokeLinecap="round" />
+                      <path d="M100 75L115 75" stroke="#D97706" strokeWidth="3" strokeLinecap="round" />
+                      <circle cx="100" cy="75" r="3" fill="#D97706" />
+                      <rect x="96" y="36" width="8" height="4" fill="#D97706" rx="1" />
+                      <rect x="130" y="60" width="4" height="6" fill="#D97706" rx="1" transform="rotate(30 130 60)" />
+                    </svg>
+                  )
+                }
+              ].map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    className="flex flex-col sm:flex-row items-center gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-md transition duration-300 hover:shadow-xl hover:border-slate-350"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.45, delay: index * 0.08 }}
+                  >
+                    <div className="w-full sm:w-1/2 aspect-[4/3] flex items-center justify-center bg-slate-50/50 rounded-2xl overflow-hidden p-4 border border-slate-100">
+                      {item.illustration}
+                    </div>
+                    <div className="w-full sm:w-1/2 flex flex-col items-start text-left">
+                      <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <Icon className="h-4.5 w-4.5" />
+                      </span>
+                      <h3 className="text-lg font-extrabold text-slate-900 mb-2">{item.title}</h3>
+                      <p className="text-xs leading-relaxed text-slate-500">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* How HackJudge Can Help You */}
+        <section className="border-t border-slate-100 bg-slate-50/20 px-4 py-20 sm:px-6 md:py-12">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl text-center mb-16">
+              How <span className="text-violet-600">HackJudge</span> Can Help You
+            </h2>
+
+            <div className="flex flex-col gap-6">
+              {[
+                {
+                  num: "01",
+                  title: "Pitch Deck & Slide Ingestion",
+                  desc: "Submit your project slides, problem statement, features, and tech stack. The AI reads and understands your architecture to simulate custom judge panels.",
+                  bg: "bg-[#F0F6FF]",
+                  border: "border-blue-150 hover:border-blue-400",
+                  badgeBg: "from-blue-400 to-blue-600"
+                },
+                {
+                  num: "02",
+                  title: "Practice with Specialized Judges",
+                  desc: "Test your project from every angle. Toggle between technical critics (Sophia), VC/business judges (Aria), and product experts (Dev).",
+                  bg: "bg-[#F2FAF5]",
+                  border: "border-emerald-150 hover:border-emerald-400",
+                  badgeBg: "from-emerald-400 to-emerald-600"
+                },
+                {
+                  num: "03",
+                  title: "Conduct Interactive Voice Sessions",
+                  desc: "Speak naturally to answer questions. Our speech recognition and low-latency audio response mimic a real panel interview.",
+                  bg: "bg-[#F0F6FF]",
+                  border: "border-blue-150 hover:border-blue-400",
+                  badgeBg: "from-blue-400 to-blue-600"
+                },
+                {
+                  num: "04",
+                  title: "Receive Rubric Scorecard & Summary",
+                  desc: "Analyze your performance with a breakdown of scores (Innovation, Feasibility, Q&A) and actionable advice for your pitch.",
+                  bg: "bg-[#F2FAF5]",
+                  border: "border-emerald-150 hover:border-emerald-400",
+                  badgeBg: "from-emerald-400 to-emerald-600"
+                }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  className={`flex flex-col sm:flex-row items-start gap-5 p-6 rounded-2xl border transition duration-300 ${item.bg} ${item.border} shadow-sm hover:shadow`}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.45 }}
+                >
+                  <div className={`shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${item.badgeBg} text-white font-extrabold text-lg shadow-md`}>
+                    {item.num}
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
+                    <p className="text-xs leading-relaxed text-slate-500 mt-1.5">{item.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </section>
       </main>
 
