@@ -68,7 +68,7 @@ export const generateSummary = async (req, res) => {
                     properties: {
                         summary: { type: "STRING" },
                         improvement: { type: "STRING" },
-                        score: {type: "STRING" }
+                        score: { type: "STRING" }
                     },
                     required: ["summary", "improvement", "score"]
                 }
@@ -105,21 +105,31 @@ export const generateSummary = async (req, res) => {
 
 export const getAllProject = async (req, res) => {
     try {
-        
+
         const userId = req.params.userId;
 
-        const feedbackSnapshot = await db.collection("feedback").where("userId", "==", userId).get();
+        const projectSnapshot = await db.collection("projects").where("UserId", "==", userId).get();
 
         const result = await Promise.all(
-            feedbackSnapshot.docs.map(async(doc) => {
-                const feedback = doc.data();
+            projectSnapshot.docs.map(async (doc) => {
+                const projectId = doc.id;
+                const project = doc.data();
 
-                const projectDoc = await db.collection('projects').doc(feedback.projectId).get();
+                const feedbackSnapshot = await db.collection('feedback').where("projectId", "==", projectId).get();
 
-                const project = projectDoc.data();
+                const feedback = feedbackSnapshot.docs.map(doc => {
+                    const data = doc.data();
+
+                    return {
+                        feedbackId: doc.id,
+                        score: data.score,
+                        summary: data.summary,
+                        improvement: data.improvement
+                    }
+                })
 
                 return {
-                    feedbackId: doc.id,
+                    projectId,
                     feedback,
                     project
                 };

@@ -13,6 +13,7 @@ const initialState = {
   techStack: '',
   keyFeature: '',
   judge: 'Hackathon',
+  duration: 5
 }
 
 const categories = ["Technical", "Product", "Business", "AI/ML", "Hackathon"];
@@ -251,11 +252,11 @@ export default function MockInterviewForm({ className = '' }) {
       </div>
 
       <div>
-        <label htmlFor={`${formId}-feature`} className={labelClass}>
+        <label htmlFor={`${formId}-judge`} className={labelClass}>
           Select Judge <span className="text-red-400">*</span>
         </label>
 
-        <div className='flex justify-between'>
+        <div className='flex justify-between mb-5'>
           {categories.map((category) => (
             <div key={category}>
               <input
@@ -265,11 +266,24 @@ export default function MockInterviewForm({ className = '' }) {
                 checked={values.judge === category}
                 onChange={handleChange}
               />
-            
-              <label> {category === "Hackathon" ? "Default" : category } </label>
+
+              <label> {category === "Hackathon" ? "Default" : category} </label>
             </div>
           ))}
         </div>
+
+        <div>
+          <label htmlFor={`${formId}-duration`} className='pr-5 text-sm font-medium text-slate-700'>
+            Interview Duration:
+          </label>
+          <select name="duration" value={values.duration} onChange={handleChange}>
+            <option value="3">3 min</option>
+            <option value="5">5 min</option>
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+          </select>
+        </div>
+
       </div>
 
       <div>

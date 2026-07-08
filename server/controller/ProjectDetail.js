@@ -9,8 +9,10 @@ export const addProjectDetails = async (req, res) => {
             techStack,
             keyFeature,
             deckUrl,
-            judge
+            judge,
         } = req.body;
+
+        const duration = Number(req.body.duration) * 60 * 1000;
 
         const uid = req.user.uid;
 
@@ -24,6 +26,7 @@ export const addProjectDetails = async (req, res) => {
             Feature: keyFeature,
             DeckUrl: deckUrl,
             judgeType: judge,
+            InterviewDuration: duration,
             fileUri: ""
         })
 

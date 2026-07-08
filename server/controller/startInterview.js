@@ -2,6 +2,7 @@ import ai from "../config/gemini.js";
 import fs from "fs";
 import { db } from "../config/firebaseAdmin.js";
 import { judgeConfig } from "../config/judgeConfig.js";
+import generateAudio from "../Socket/generatingAudio.js";
 
 export const startInterview = async (req, res) => {
     try {
@@ -39,7 +40,7 @@ export const startInterview = async (req, res) => {
             * Design & User Experience
 
             Begin with the judging criterion that you believe is the most important based on the project details.
-
+            
             ## QUESTION STYLE RULES (VERY IMPORTANT)
 
             - Ask questions in simple, spoken English (like a real interviewer)
@@ -50,11 +51,6 @@ export const startInterview = async (req, res) => {
             - Do NOT use long introductions or background descriptions
             - Do NOT write essay-style or paragraph-style questions
 
-            ## GOOD EXAMPLES:
-            - "How did you decide to use LGBMRanker for this problem?"
-            - "What happens if your API data is outdated?"
-            - "How does your system find new business opportunities?"
-            
             ## Instructions
 
             * Behave like a professional hackathon judge.
@@ -99,8 +95,8 @@ export const startInterview = async (req, res) => {
             })
         }
 
-        
-        
+
+
         // Generating content
         const result = await ai.models.generateContent({
             model: process.env.GEMINI_MODEL,
@@ -118,6 +114,11 @@ export const startInterview = async (req, res) => {
             })
         }
 
+        // Processing Audio
+        const elevenlabsAudio = await generateAudio(question);
+
+        const startTime = Date.now();
+
         const interviewRef = await db.collection('interviews').add({
             projectId: projectId,
             userId: project.UserId,
@@ -127,13 +128,18 @@ export const startInterview = async (req, res) => {
                     candidateAnswer: ""
                 }
             ],
+            startTime,
+            duration: project.InterviewDuration,
             createdAt: new Date()
         });
 
         res.status(200).json({
             question,
+            audio: elevenlabsAudio,
             interviewId: interviewRef.id,
-            projectId
+            projectId,
+            duration: project.duration,
+            startTime,
         })
 
     } catch (err) {

@@ -24,7 +24,7 @@ function BrandLink() {
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-500/25">
         <Sparkles className="h-4 w-4 text-white" aria-hidden />
       </span>
-      PitchPerfect AI
+      HackJudge
     </Link>
   )
 }
@@ -43,14 +43,14 @@ function PrimaryNav({ className }) {
 
 
 export default function Navbar({ variant = 'marketing', trailing = null }) {
-  const { isLoggedIn, LogOut, loading} = useAuth();
+  const { isLoggedIn, LogOut, loading } = useAuth();
 
   // if (loading) return null;
 
   const handleLogOut = async () => {
-    try{
+    try {
       await LogOut();
-    } catch (err){
+    } catch (err) {
       console.error(err);
     }
   }

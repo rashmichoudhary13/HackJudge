@@ -6,3 +6,4 @@ server/.env
 
 server/serviceAccount.json
 tech.txt
+agent.md

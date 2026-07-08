@@ -8,6 +8,7 @@ import SignupPage from './pages/SignupPage.jsx'
 import ProcessingPage from './components/processingPage.jsx'
 import QuestionProcessingPage from './components/QuestionLoading.jsx'
 import { ProtectedRoute, InterviewProtectedRoute } from './components/ProtectedRoute.jsx'
+import InterviewWebSpeech from './components/InterviewWebSpeech.jsx'
 
 function App() {
   return (

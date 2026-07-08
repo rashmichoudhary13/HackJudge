@@ -1,20 +1,64 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Mic, MicOff, PhoneOff, Video, VideoOff, Volume2 } from 'lucide-react'
+import { Mic, MicOff, PhoneOff, Video, VideoOff, Volume2, Timer } from 'lucide-react'
 import { auth } from '../context/auth'
-import recognition from '../context/speechRecognitionConfig';
 
-const INTERVIEW_TIME = 3 * 60 //5 min In seconds
+function InterviewerAvatar({ status }) {
+  const isSpeaking = status === 'speaking';
+  const isListening = status === 'listening';
 
-function InterviewerAvatar() {
   return (
-    <div className="relative flex h-24 w-24 items-center justify-center">
-      <div
-        className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 opacity-60 blur-xl"
-        aria-hidden
-      />
-      <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-600 shadow-lg shadow-blue-500/40">
-        <span className="text-3xl font-bold text-white">S</span>
+    <div className="flex flex-col items-center justify-center gap-6">
+      <div className="relative flex h-24 w-24 items-center justify-center">
+        {/* Ripples when AI speaks */}
+        {isSpeaking && (
+          <>
+            <div
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 opacity-0 animate-ripple"
+              style={{ animationDelay: '0s' }}
+            />
+            <div
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 opacity-0 animate-ripple"
+              style={{ animationDelay: '0.6s' }}
+            />
+            <div
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 opacity-0 animate-ripple"
+              style={{ animationDelay: '1.2s' }}
+            />
+          </>
+        )}
+
+        {/* Glow behind avatar */}
+        <div
+          className={`absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 blur-xl transition-all duration-500 ${isSpeaking ? 'opacity-85 scale-110' : 'opacity-40 scale-100'
+            }`}
+          aria-hidden
+        />
+
+        {/* Avatar circle */}
+        <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-600 shadow-lg shadow-blue-500/40">
+          <span className="text-3xl font-bold text-white">S</span>
+        </div>
+      </div>
+
+      {/* Listening Indicator / Turn State */}
+      <div className="h-12 flex flex-col items-center justify-center">
+        {isListening ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-end gap-1.5 h-6">
+              <div className="w-1.5 bg-blue-500 rounded-full animate-soundWave" style={{ animationDelay: '0.1s' }} />
+              <div className="w-1.5 bg-indigo-500 rounded-full animate-soundWave" style={{ animationDelay: '0.3s' }} />
+              <div className="w-1.5 bg-violet-500 rounded-full animate-soundWave" style={{ animationDelay: '0.5s' }} />
+              <div className="w-1.5 bg-indigo-500 rounded-full animate-soundWave" style={{ animationDelay: '0.2s' }} />
+              <div className="w-1.5 bg-blue-500 rounded-full animate-soundWave" style={{ animationDelay: '0.4s' }} />
+            </div>
+            <span className="text-xs font-semibold text-blue-600 tracking-wider uppercase animate-pulse">Listening... Your Turn</span>
+          </div>
+        ) : isSpeaking ? (
+          <span className="text-xs font-semibold text-violet-600 tracking-wider uppercase">Judge Speaking...</span>
+        ) : (
+          <span className="text-xs font-medium text-slate-400">Ready</span>
+        )}
       </div>
     </div>
   )
@@ -25,8 +69,14 @@ export default function InterviewRoomPage() {
   const location = useLocation()
   const videoRef = useRef(null)
   const streamRef = useRef(null)
-  const timeUp = useRef(false);
-  const lastAnswer = useRef("");
+  const wsRef = useRef(null);
+
+  // Audio ref
+  const audioContextRef = useRef(null);
+  const workletNodeRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const sourceNodeRef = useRef(null);
+  const listeningRef = useRef(false);
 
   const projectTitle = location.state?.projectTitle || 'Product Design'
   const userName =
@@ -36,183 +86,275 @@ export default function InterviewRoomPage() {
   const projectId = location.state?.projectId || 'null';
   const firstQuestion = location.state?.question || "";
   const interviewId = location.state?.interviewId || 'null';
+  const audio = location.state?.audio || 'null';
+  const duration = location.state?.duration || "300000"; // 10 min
+  const startTime = location.state?.startTime || Date.now();
 
   const [micOn, setMicOn] = useState(true)
   const [cameraOn, setCameraOn] = useState(true)
   const [connected, setConnected] = useState(false)
   const [question, setQuestion] = useState(firstQuestion);
   const [transcript, setTranscript] = useState("");
-  const [timeLeft, setTimeLeft] = useState(INTERVIEW_TIME);
   const [error, setError] = useState("");
+  const [timeLeft, setTimeLeft] = useState(duration);
+  const [status, setStatus] = useState("speaking"); // 'speaking' | 'listening' | 'idle'
 
-  useEffect(() => {
-    console.log("Question effect:", question);
+  const lastAnswer = useRef("");
+  const timeUp = useRef(false);
 
-    if (question) {
-      speak(question);
-    } else {
-      navigate('/form');
-    }
-  }, [question]);
+  const seconds = Math.floor(timeLeft / 1000);
 
-  const speak = (text) => {
-    try {
-      const utterance = new SpeechSynthesisUtterance(text);
-
-      utterance.rate = 1;
-      utterance.pitch = 1;
-
-      utterance.onend = () => {
-
-        if (timeUp.current) {
-          speakLastMessage();
-          return;
-        }
-
-        startListening();
-      };
-
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.log("Can't speak: ", err);
-    }
-  };
-
-  const startListening = () => {
-    try {
-      recognition.start();
-      console.log("Listening....");
-    } catch (err) {
-      console.log("Listening error: ", err);
-    }
-  };
-
-  useEffect(() => {
-
-    recognition.onstart = () => console.log("Recognition started");
-
-    recognition.onresult = (event) => {
-      console.log("Onresult....");
-      let currentTranscript = "";
-
-      for (let i = 0; i < event.results.length; i++) {
-        currentTranscript += event.results[i][0].transcript;
-      }
-
-      setTranscript(currentTranscript);
-    };
-
-    recognition.onend = () => {
-
-      console.log("onend...");
-
-      setTranscript((current) => {
-        const trimmed = current.trim();
-
-        if (!trimmed) return "";
-
-        lastAnswer.current = trimmed;
-
-        // Check if the time is up
-        if (timeUp.current) {
-          speakLastMessage();
-          return;
-        }
-
-        fetchQuestion(trimmed);
-
-        return "";
-      });
-    };
-
-    return () => {
-      recognition.onresult = null;
-      recognition.onend = null;
-    };
-  }, []);
-
-  const fetchQuestion = async (answer) => {
-    try {
-      console.log("1");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/processInterview`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          interviewId,
-          answer
-        }),
-      })
-
-      console.log("2");
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.log("Error in response: ", result.message);
-        navigate('/form', {
-          state: {
-            error: result.message
-          }
-        })
-        return;
-      }
-
-      const nxtquestion = result.question;
-
-      console.log("Question: ", nxtquestion);
-
-      setQuestion(nxtquestion);
-
-    } catch (err) {
-      console.log("Question error: ", err);
-    }
-  };
-
-  // To keep track of the time
+  // set Timer
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          timeUp.current = true;
+      const remaining = duration - (Date.now() - startTime);
 
-          return 0;
-        }
+      if (remaining <= 0) {
+        timeUp.current = true;
+        setTimeLeft(0);
+        clearInterval(timer);
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 1000);
 
-        return prev - 1;
-      })
-    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
-    return () => clearInterval(timer);
-  }, []);
+  const playAudio = (base64Audio, onEnd) => {
+    setStatus("speaking");
+    listeningRef.current = false;
+    setTranscript("");
 
-  const speakLastMessage = () => {
-    console.log("Inside speak last message")
-    const utterance = new SpeechSynthesisUtterance("OOps! The time is up. Thankyou for sharing your project.")
+    const blob = new Blob(
+      [
+        Uint8Array.from(
+          atob(base64Audio),
+          c => c.charCodeAt(0)
+        )
+      ],
+      { type: "audio/mpeg" }
+    );
 
-    utterance.onend = () => {
-      endInterview();
+    const url = URL.createObjectURL(blob);
+
+    const audio = new Audio(url);
+
+    audio.onended = () => {
+      console.log("Audio ended");
+      URL.revokeObjectURL(url);
+
+      if (onEnd) {
+        setStatus("idle");
+        onEnd();
+      } else {
+        listeningRef.current = true;
+        setStatus("listening");
+      }
+    };
+
+    audio.play().catch(err => {
+      console.error("Audio playback error:", err);
+      if (onEnd) {
+        setStatus("idle");
+        onEnd();
+      } else {
+        listeningRef.current = true;
+        setStatus("listening");
+      }
+    });
+  };
+
+  useEffect(() => {
+    startMicrophoneStreaming();
+    playAudio(audio);
+  }, [])
+
+  // Convert raw audio sample from 32bit to 16bit
+  function floatTo16BitPCM(float32Array) {
+
+    const int16 = new Int16Array(float32Array.length);
+
+    for (let i = 0; i < float32Array.length; i++) {
+
+      const s = Math.max(-1, Math.min(1, float32Array[i]));
+
+      int16[i] = s < 0
+        ? s * 0x8000
+        : s * 0x7FFF;
     }
 
-    speechSynthesis.speak(utterance);
+    return int16;
   }
+
+  // Start microphone streaming and convert audio to PCM
+  const startMicrophoneStreaming = async () => {
+
+    console.log("Listening...");
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        audio: {
+
+          channelCount: 1,
+
+          echoCancellation: true,
+
+          noiseSuppression: true,
+
+          autoGainControl: true
+
+        }
+
+      });
+
+    mediaStreamRef.current = stream;
+
+    audioContextRef.current =
+      new AudioContext({
+        sampleRate: 16000
+      });
+
+    console.log(audioContextRef.current.sampleRate);
+
+    await audioContextRef.current.audioWorklet.addModule(
+      "/audio-processor.js"
+    );
+
+    sourceNodeRef.current =
+      audioContextRef.current.createMediaStreamSource(stream);
+
+    workletNodeRef.current =
+      new AudioWorkletNode(
+        audioContextRef.current,
+        "audio-processor"
+      );
+
+    sourceNodeRef.current.connect(workletNodeRef.current);
+
+    // Optional: keep node alive without audible output
+    const gain = audioContextRef.current.createGain();
+    gain.gain.value = 0;
+
+    workletNodeRef.current.connect(gain);
+    gain.connect(audioContextRef.current.destination);
+
+    workletNodeRef.current.port.onmessage = (event) => {
+
+      if (!listeningRef.current) return;
+
+      const float32 = event.data;
+
+      const pcm16 = floatTo16BitPCM(float32);
+
+      if (
+        wsRef.current &&
+        wsRef.current.readyState === WebSocket.OPEN
+      ) {
+        console.log("Sending audio");
+        wsRef.current.send(pcm16.buffer);
+
+      }
+
+    };
+  };
+
+
+  // Connection to backend websocket
+  useEffect(() => {
+    const ws = new WebSocket(
+      `ws://localhost:3000/interview?interviewId=${interviewId}&projectId=${projectId}`
+    );
+
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("Connected");
+    };
+
+    ws.onmessage = async (event) => {
+
+      const data = JSON.parse(event.data);
+
+      switch (data.type) {
+
+        case "question":
+
+          setQuestion(data.question);
+
+          playAudio(data.audio);
+
+          break;
+
+        case "partial_transcript":
+
+          setTranscript(data.text);
+          console.log("partial_transcript: ", data.text);
+
+          break;
+
+        case "committed_transcript":
+
+          setTranscript(data.text);
+          console.log("final_transcript: ", data.text);
+
+          listeningRef.current = false;
+          setStatus("idle");
+          lastAnswer.current = data.text;
+
+          break;
+
+        case "interview_end":
+          playAudio(data.audio, () => {
+            endInterview();
+          });
+
+          break;
+
+        case "error":
+
+          setError(data.message);
+          endInterview();
+
+          break;
+      }
+
+    };
+
+
+    return () => ws.close();
+  }, [interviewId]);
+
+  // Stop microphone streaming
+  const stopMicrophoneStreaming = async () => {
+
+    console.log("stopping the microphone");
+    workletNodeRef.current?.disconnect();
+
+    sourceNodeRef.current?.disconnect();
+
+    mediaStreamRef.current
+      ?.getTracks()
+      .forEach(track => track.stop());
+
+    await audioContextRef.current?.close();
+  };
 
   const endInterview = async () => {
     console.log("Inside end interview");
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    speechSynthesis.cancel();
-    recognition.abort();
+    stopMicrophoneStreaming();
     navigate('/processing', {
       state: {
-        lastAnswer,
-        interviewId
+        lastAnswer: lastAnswer.current,
+        interviewId,
+        error
       }
     })
   }
 
+
+  // Camera setup
   useEffect(() => {
     const timer = setTimeout(() => {
       setConnected(true)
@@ -288,20 +430,29 @@ export default function InterviewRoomPage() {
               {projectTitle}
             </h1>
           </div>
-          <span
-            className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${connected
-              ? 'bg-emerald-100 text-emerald-700'
-              : 'bg-amber-100 text-amber-700'
-              }`}
-          >
-            {connected ? 'Connected' : 'Connecting…'}
-          </span>
+
+          <div>
+            <span
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors mx-4 bg-emerald-100 text-emerald-700
+                }`}
+            >
+              <Timer className='inline w-6 mr-1 mb-1' /> {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
+            </span>
+            <span
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${connected
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-100 text-amber-700'
+                }`}
+            >
+              {connected ? 'Connected' : 'Connecting…'}
+            </span>
+          </div>
         </div>
 
         {/* Video panels */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-slate-100 sm:aspect-auto sm:min-h-[280px]">
-            <InterviewerAvatar />
+            <InterviewerAvatar status={status} />
           </div>
 
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-900 sm:aspect-auto sm:min-h-[280px]">
@@ -388,7 +539,7 @@ export default function InterviewRoomPage() {
               </div>
             </div>
             <div className="min-w-0 space-y-3 text-sm leading-relaxed text-slate-200">
-              {!question && !transcript ? (
+              {error ? (
                 <p className="text-red-400">{error}</p>
               ) : (
                 <>
@@ -397,7 +548,7 @@ export default function InterviewRoomPage() {
                       <p className="mb-1 text-xs font-medium text-slate-400">
                         "AI Interviewer"
                       </p>
-                      <p>{timeUp.current ? "OOps! The time is up. Thankyou for sharing your project." : question}</p>
+                      <p>{timeUp.current ? "We've reached the end of the interview. Thank you for your presentation." : status === "thinking" ? "Thinking..." : question}</p>
                     </div>
                   )}
                   {transcript && (

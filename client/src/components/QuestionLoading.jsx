@@ -32,7 +32,10 @@ const QuestionProcessingPage = () => {
                         question: data.question,
                         interviewId: data.interviewId,
                         projectId,
-                        projectTitle
+                        projectTitle,
+                        audio: data.audio,
+                        duration: data.duration,
+                        startTime: data.startTime
                     }
                 })
           
