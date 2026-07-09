@@ -109,8 +109,8 @@ export const startInterview = async (req, res) => {
 
         if (!question) {
             console.log("Question is undefined");
-            res.status(500).json({
-                message: "Error generating first question"
+            return res.status(500).json({
+                message: "can't generate interview right now try after some time."
             })
         }
 
@@ -144,8 +144,8 @@ export const startInterview = async (req, res) => {
 
     } catch (err) {
         console.error("Generating first quesiton error: ", err);
-        res.status(500).json({
-            message: "Can't generate first question"
+        return res.status(500).json({
+            message: "can't generate interview right now try after some time."
         })
     }
 }

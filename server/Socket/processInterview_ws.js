@@ -58,11 +58,16 @@ export const processInterview_ws = async (event) => {
         * Implementation (engineering, architecture, technical decisions) (Technical Depth)
         * Design & User Experience
 
-        Evaluate the candidate's **most recent answer**.
+        Your objective is to evaluate the candidate across ALL judging criteria within the available interview time.
 
-        * If the answer is technically sound, complete, and well justified, move to another judging criterion by asking one new question.
-        * If the answer is vague, incomplete, incorrect, or lacks justification, ask one follow-up question on the same topic to better evaluate the candidate.
-        * You have a limited time, so don't keep following up. You have to cover the questions in the priority list.
+        Do not spend too much time on a single criterion.
+
+        For each criterion:
+        - Ask one primary question.
+        - Ask at most two follow-up questions only if they are likely to reveal additional understanding.
+        - If the candidate still cannot answer adequately after two attempts, accept that the criterion has been sufficiently assessed and continue to the next criterion.
+
+It is more important to cover all judging criteria than to fully explore one topic.
         
         ## QUESTION STYLE RULES (VERY IMPORTANT)
 

@@ -21,7 +21,14 @@ const QuestionProcessingPage = () => {
 
                 if(!response.ok){
                     console.log("Cannot generate first question");
-                    navigate('/form');
+                    const errData = await response.json().catch(() => ({}));
+                    const errMsg = errData.message || "can't generate interview right now try after some time.";
+                    navigate('/', {
+                        state: {
+                            interviewError: errMsg
+                        }
+                    });
+                    return;
                 }
 
                 const data = await response.json();

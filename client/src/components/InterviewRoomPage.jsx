@@ -76,7 +76,7 @@ export default function InterviewRoomPage() {
   const workletNodeRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const sourceNodeRef = useRef(null);
-  const listeningRef = useRef(false);
+  const playingAudioRef = useRef(null);
 
   const projectTitle = location.state?.projectTitle || 'Product Design'
   const userName =
@@ -99,8 +99,10 @@ export default function InterviewRoomPage() {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [status, setStatus] = useState("speaking"); // 'speaking' | 'listening' | 'idle'
 
+  const listeningRef = useRef(false);
   const lastAnswer = useRef("");
   const timeUp = useRef(false);
+  console.log("starting listening ref: ", listeningRef.current);
 
   const seconds = Math.floor(timeLeft / 1000);
 
@@ -123,8 +125,13 @@ export default function InterviewRoomPage() {
 
   const playAudio = (base64Audio, onEnd) => {
     setStatus("speaking");
+    console.log("Listening ref inside playaudio: ", listeningRef.current);
     listeningRef.current = false;
     setTranscript("");
+
+    if (playingAudioRef.current) {
+      playingAudioRef.current.pause();
+    }
 
     const blob = new Blob(
       [
@@ -138,36 +145,38 @@ export default function InterviewRoomPage() {
 
     const url = URL.createObjectURL(blob);
 
-    const audio = new Audio(url);
+    const audioObj = new Audio(url);
+    playingAudioRef.current = audioObj;
 
-    audio.onended = () => {
+    audioObj.onended = () => {
       console.log("Audio ended");
       URL.revokeObjectURL(url);
+      if (playingAudioRef.current === audioObj) {
+        playingAudioRef.current = null;
+      }
 
       if (onEnd) {
         setStatus("idle");
         onEnd();
       } else {
         listeningRef.current = true;
+        console.log("Listening ref inside end: ", listeningRef.current);
         setStatus("listening");
       }
     };
 
-    audio.play().catch(err => {
-      console.error("Audio playback error:", err);
-      if (onEnd) {
-        setStatus("idle");
-        onEnd();
-      } else {
-        listeningRef.current = true;
-        setStatus("listening");
-      }
-    });
+    audioObj.play().catch(err => console.log("Audio playback failed: ", err));
   };
 
   useEffect(() => {
     startMicrophoneStreaming();
     playAudio(audio);
+    return () => {
+      stopMicrophoneStreaming();
+      if (playingAudioRef.current) {
+        playingAudioRef.current.pause();
+      }
+    };
   }, [])
 
   // Convert raw audio sample from 32bit to 16bit
@@ -211,6 +220,11 @@ export default function InterviewRoomPage() {
 
     mediaStreamRef.current = stream;
 
+    // Apply initial mute state
+    stream.getAudioTracks().forEach((track) => {
+      track.enabled = micOn;
+    });
+
     audioContextRef.current =
       new AudioContext({
         sampleRate: 16000
@@ -252,7 +266,6 @@ export default function InterviewRoomPage() {
         wsRef.current &&
         wsRef.current.readyState === WebSocket.OPEN
       ) {
-        console.log("Sending audio");
         wsRef.current.send(pcm16.buffer);
 
       }
@@ -300,6 +313,7 @@ export default function InterviewRoomPage() {
           console.log("final_transcript: ", data.text);
 
           listeningRef.current = false;
+          console.log("Listening ref after final answer: ", listeningRef.current);
           setStatus("idle");
           lastAnswer.current = data.text;
 
@@ -315,7 +329,8 @@ export default function InterviewRoomPage() {
         case "error":
 
           setError(data.message);
-          endInterview();
+          console.log("Received error in error case: ", data.message);
+          endInterview(data.message);
 
           break;
       }
@@ -324,7 +339,7 @@ export default function InterviewRoomPage() {
 
 
     return () => ws.close();
-  }, [interviewId]);
+  }, [interviewId, projectId]);
 
   // Stop microphone streaming
   const stopMicrophoneStreaming = async () => {
@@ -341,14 +356,14 @@ export default function InterviewRoomPage() {
     await audioContextRef.current?.close();
   };
 
-  const endInterview = async () => {
+  const endInterview = async (errorMsg) => {
     console.log("Inside end interview");
     stopMicrophoneStreaming();
     navigate('/processing', {
       state: {
         lastAnswer: lastAnswer.current,
         interviewId,
-        error
+        error: errorMsg || error
       }
     })
   }
@@ -371,7 +386,7 @@ export default function InterviewRoomPage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: true,
+          audio: false,
         })
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop())
@@ -396,7 +411,7 @@ export default function InterviewRoomPage() {
   }, [])
 
   useEffect(() => {
-    const stream = streamRef.current
+    const stream = mediaStreamRef.current
     if (!stream) return
     stream.getAudioTracks().forEach((track) => {
       track.enabled = micOn

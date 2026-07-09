@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight,
   FileText,
@@ -8,8 +8,11 @@ import {
   Target,
   UserCog,
   Zap,
+  AlertTriangle,
+  X,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import Footer from '../components/Footer.jsx'
 import Navbar from '../components/Navbar.jsx'
 import DotField from '../components/DotField.jsx'
@@ -20,6 +23,22 @@ const fadeIn = {
 }
 
 export default function LandingPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+
+  useEffect(() => {
+    const errorFromState = location.state?.interviewError;
+    if (errorFromState) {
+      setErrorMessage(errorFromState);
+      setShowErrorModal(true);
+
+      // Clear the state so refreshing doesn't show the error again
+      navigate(location.pathname, { replace: true, state: { ...location.state, interviewError: undefined } });
+    }
+  }, [location.state, navigate, location.pathname]);
+
   return (
     <motion.div
       className="min-h-screen bg-white text-slate-800 antialiased"
@@ -379,6 +398,64 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
+
+      <AnimatePresence>
+        {showErrorModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowErrorModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-2xl animate-in"
+            >
+              {/* Header decor red line */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-red-500" />
+
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-650">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 text-left">
+                    Interview Session Error
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-655 text-left">
+                    {errorMessage || "An unexpected error occurred during your interview session processing."}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowErrorModal(false)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowErrorModal(false)}
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-slate-900/10 hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </motion.div>
