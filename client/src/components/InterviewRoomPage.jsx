@@ -278,7 +278,7 @@ export default function InterviewRoomPage() {
   // Connection to backend websocket
   useEffect(() => {
     const ws = new WebSocket(
-      `ws://localhost:3000/interview?interviewId=${interviewId}&projectId=${projectId}`
+      `${import.meta.env.VITE_BACKEND_WS_URL}/interview?interviewId=${interviewId}&projectId=${projectId}`
     );
 
     wsRef.current = ws;
