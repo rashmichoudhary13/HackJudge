@@ -39,11 +39,6 @@ const DotField = memo(({
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let resizeTimer;
 
-    function resize() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(doResize, 100);
-    }
-
     function doResize() {
       if (!canvas.parentElement) return;
       const rect = canvas.parentElement.getBoundingClientRect();
@@ -228,7 +223,6 @@ const DotField = memo(({
       resizeObserver.disconnect();
       window.removeEventListener('mousemove', onMouseMove);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import Footer from '../components/Footer.jsx'
 import Navbar from '../components/Navbar.jsx'
-import { auth } from '../context/auth.jsx'
+import { auth } from '../context/firebase.js'
 import { ImUserTie } from "react-icons/im";
 import { HiOutlineTrash } from "react-icons/hi2";
 import Loader from '../components/Loader.jsx'
 import { AlertTriangle, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 
 export default function DashboardPage() {
@@ -36,8 +36,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const errorFromState = location.state?.interviewError;
     if (errorFromState) {
-      setErrorMessage(errorFromState);
-      setShowErrorModal(true);
+      setTimeout(() => {
+        setErrorMessage(errorFromState);
+        setShowErrorModal(true);
+      }, 0);
 
       // Clear the state so refreshing doesn't show the error again
       navigate(location.pathname, { replace: true, state: { ...location.state, interviewError: undefined } });
@@ -70,7 +72,7 @@ export default function DashboardPage() {
         const data = await response.json();
         setProjects(data);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setLoading(false);
       }
     }

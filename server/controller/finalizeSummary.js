@@ -78,7 +78,7 @@ export const generateSummary = async (req, res) => {
         const data = JSON.parse(result.text)
         console.log("Summary in backend: ", data);
 
-        const summarydoc = await db.collection("feedback").add({
+        await db.collection("feedback").add({
             summary: data.summary,
             improvement: data.improvement,
             score: data.score,
@@ -87,8 +87,6 @@ export const generateSummary = async (req, res) => {
             userId: interview.userId,
             createdAt: new Date()
         });
-
-        const summaryId = summarydoc.id;
 
         res.status(200).json({
             message: "The summary is generated successfully",

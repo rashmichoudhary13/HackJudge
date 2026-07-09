@@ -1,3 +1,4 @@
+/* global AudioWorkletProcessor, registerProcessor */
 class AudioProcessor extends AudioWorkletProcessor {
 
     process(inputs) {

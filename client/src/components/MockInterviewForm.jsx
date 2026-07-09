@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FileUp, X } from 'lucide-react'
-import { auth } from '../context/auth'
+import { auth } from '../context/firebase.js'
 
 const ACCEPT_DECK =
   '.pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation'

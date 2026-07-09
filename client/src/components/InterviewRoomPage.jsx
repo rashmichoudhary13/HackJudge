@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Mic, MicOff, PhoneOff, Video, VideoOff, Volume2, Timer } from 'lucide-react'
-import { auth } from '../context/auth'
+import { auth } from '../context/firebase.js'
 
 function InterviewerAvatar({ status }) {
   const isSpeaking = status === 'speaking';
@@ -88,7 +88,7 @@ export default function InterviewRoomPage() {
   const interviewId = location.state?.interviewId || 'null';
   const audio = location.state?.audio || 'null';
   const duration = location.state?.duration || "300000"; // 10 min
-  const startTime = location.state?.startTime || Date.now();
+  const [startTime] = useState(() => location.state?.startTime || Date.now());
 
   const [micOn, setMicOn] = useState(true)
   const [cameraOn, setCameraOn] = useState(true)
@@ -121,9 +121,9 @@ export default function InterviewRoomPage() {
     }, 1000);
 
     return () => clearInterval(timer)
-  }, [])
+  }, [duration, startTime])
 
-  const playAudio = (base64Audio, onEnd) => {
+  function playAudio(base64Audio, onEnd) {
     setStatus("speaking");
     console.log("Listening ref inside playaudio: ", listeningRef.current);
     listeningRef.current = false;
@@ -177,6 +177,7 @@ export default function InterviewRoomPage() {
         playingAudioRef.current.pause();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Convert raw audio sample from 32bit to 16bit
@@ -197,7 +198,7 @@ export default function InterviewRoomPage() {
   }
 
   // Start microphone streaming and convert audio to PCM
-  const startMicrophoneStreaming = async () => {
+  async function startMicrophoneStreaming() {
 
     console.log("Listening...");
 
@@ -339,10 +340,11 @@ export default function InterviewRoomPage() {
 
 
     return () => ws.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewId, projectId]);
 
   // Stop microphone streaming
-  const stopMicrophoneStreaming = async () => {
+  async function stopMicrophoneStreaming() {
 
     console.log("stopping the microphone");
     workletNodeRef.current?.disconnect();
@@ -354,9 +356,9 @@ export default function InterviewRoomPage() {
       .forEach(track => track.stop());
 
     await audioContextRef.current?.close();
-  };
+  }
 
-  const endInterview = async (errorMsg) => {
+  async function endInterview(errorMsg) {
     console.log("Inside end interview");
     stopMicrophoneStreaming();
     navigate('/processing', {

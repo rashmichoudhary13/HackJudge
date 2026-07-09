@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Mic, MicOff, PhoneOff, Video, VideoOff, Volume2 } from 'lucide-react'
-import { auth } from '../context/auth'
+import { auth } from '../context/firebase.js'
 import recognition from '../context/speechRecognitionConfig';
 
 const INTERVIEW_TIME = 3 * 60 //5 min In seconds
@@ -37,15 +37,11 @@ export default function InterviewWebSpeech() {
   const projectId = location.state?.projectId || 'null';
   const firstQuestion = location.state?.question || "";
   const interviewId = location.state?.interviewId || 'null';
-  const audio = location.state?.audio || 'null';
-
-  const [micOn, setMicOn] = useState(true)
+    const [micOn, setMicOn] = useState(true)
   const [cameraOn, setCameraOn] = useState(true)
   const [connected, setConnected] = useState(false)
   const [question, setQuestion] = useState(firstQuestion);
   const [transcript, setTranscript] = useState("");
-  const [timeLeft, setTimeLeft] = useState(INTERVIEW_TIME);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     console.log("Question effect:", question);
@@ -55,9 +51,10 @@ export default function InterviewWebSpeech() {
     } else {
       navigate('/form');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question]);
 
-  const speak = (text) => {
+  function speak(text) {
     try {
       const utterance = new SpeechSynthesisUtterance(text);
 
@@ -79,16 +76,16 @@ export default function InterviewWebSpeech() {
     } catch (err) {
       console.log("Can't speak: ", err);
     }
-  };
+  }
 
-  const startListening = () => {
+  function startListening() {
     try {
       recognition.start();
       console.log("Listening....");
     } catch (err) {
       console.log("Listening error: ", err);
     }
-  };
+  }
 
   useEffect(() => {
 
@@ -132,9 +129,10 @@ export default function InterviewWebSpeech() {
       recognition.onresult = null;
       recognition.onend = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchQuestion = async (answer) => {
+  async function fetchQuestion(answer) {
     try {
       console.log("1");
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/processInterview`, {
@@ -171,27 +169,18 @@ export default function InterviewWebSpeech() {
     } catch (err) {
       console.log("Question error: ", err);
     }
-  };
+  }
 
   // To keep track of the time
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          timeUp.current = true;
+    const timer = setTimeout(() => {
+      timeUp.current = true;
+    }, INTERVIEW_TIME * 1000);
 
-          return 0;
-        }
-
-        return prev - 1;
-      })
-    }, 1000)
-
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, []);
 
-  const speakLastMessage = () => {
+  function speakLastMessage() {
     console.log("Inside speak last message")
     const utterance = new SpeechSynthesisUtterance("OOps! The time is up. Thankyou for sharing your project.")
 
@@ -202,7 +191,7 @@ export default function InterviewWebSpeech() {
     speechSynthesis.speak(utterance);
   }
 
-  const endInterview = async () => {
+  async function endInterview() {
     console.log("Inside end interview");
     streamRef.current?.getTracks().forEach((track) => track.stop())
     speechSynthesis.cancel();
@@ -391,7 +380,7 @@ export default function InterviewWebSpeech() {
             </div>
             <div className="min-w-0 space-y-3 text-sm leading-relaxed text-slate-200">
               {!question && !transcript ? (
-                <p className="text-red-400">{error}</p>
+                <p className="text-slate-400">Preparing question...</p>
               ) : (
                 <>
                   {question && (

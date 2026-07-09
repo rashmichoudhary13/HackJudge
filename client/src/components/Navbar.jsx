@@ -43,7 +43,7 @@ function PrimaryNav({ className }) {
 
 
 export default function Navbar({ variant = 'marketing', trailing = null }) {
-  const { isLoggedIn, LogOut, loading } = useAuth();
+  const { isLoggedIn, LogOut } = useAuth();
 
   // if (loading) return null;
 

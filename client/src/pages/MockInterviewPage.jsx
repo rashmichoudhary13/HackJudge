@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import Footer from '../components/Footer.jsx'
 import MockInterviewForm from '../components/MockInterviewForm.jsx'

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight,
@@ -31,8 +32,10 @@ export default function LandingPage() {
   useEffect(() => {
     const errorFromState = location.state?.interviewError;
     if (errorFromState) {
-      setErrorMessage(errorFromState);
-      setShowErrorModal(true);
+      setTimeout(() => {
+        setErrorMessage(errorFromState);
+        setShowErrorModal(true);
+      }, 0);
 
       // Clear the state so refreshing doesn't show the error again
       navigate(location.pathname, { replace: true, state: { ...location.state, interviewError: undefined } });
@@ -185,6 +188,7 @@ export default function LandingPage() {
                   title: 'Instant Report',
                   desc: 'Get your report and rubric scorecard with clear improvement points.'
                 },
+                // eslint-disable-next-line no-unused-vars
               ].map(({ icon: Icon, step, title, desc }, i) => (
                 <motion.article
                   key={step}

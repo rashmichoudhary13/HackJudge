@@ -54,7 +54,7 @@ export function setupSpeechToText(client, session) {
                     }));
                     break;
 
-                case "committed_transcript":
+                case "committed_transcript": {
                     client.send(JSON.stringify({
                         type: "committed_transcript",
                         text: result.text,
@@ -101,6 +101,7 @@ export function setupSpeechToText(client, session) {
                         }));
                     }
                     break;
+                }
 
                 default:
                     console.log(result);

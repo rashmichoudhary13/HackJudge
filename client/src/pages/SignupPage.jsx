@@ -1,10 +1,12 @@
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import Footer from '../components/Footer.jsx'
 import Navbar from '../components/Navbar.jsx'
-import { useAuth, auth } from '../context/auth.jsx'
+import { useAuth } from '../context/auth.jsx'
+import { auth } from '../context/firebase.js'
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)

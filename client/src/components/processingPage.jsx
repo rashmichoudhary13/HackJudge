@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const ProcessingPage = () => {
@@ -9,8 +9,7 @@ const ProcessingPage = () => {
   const interviewId = location.state?.interviewId || "null"
   const interviewError = location.state?.error || "";
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
 
   useEffect(() => {
     if (interviewError) {
@@ -38,7 +37,6 @@ const ProcessingPage = () => {
 
         if (!response.ok) {
           console.log("Error in generating summary")
-          setError("Error in generating summary");
           navigate('/dashboard', {
             state: {
               interviewError: "Error in generating summary"
@@ -57,7 +55,6 @@ const ProcessingPage = () => {
         });
       } catch (err) {
         console.log("Error in generating summary: ", err);
-        setError("Error in generating summary");
         navigate('/dashboard', {
           state: {
             interviewError: "Error in generating summary: " + err.message
