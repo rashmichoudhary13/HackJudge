@@ -18,7 +18,7 @@ export function setupSpeechToText(client, session) {
             process.env.ELEVENLAB_STT_URI,
             {
                 headers: {
-                    "xi-api-key": process.env.ELEVENLABS_VOICE_API_KEY
+                    "xi-api-key": process.env.ELEVENLABS_API_KEY
                 }
             }
         );
