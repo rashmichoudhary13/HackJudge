@@ -27,7 +27,7 @@ export function initializeInterviewWebSocket(httpServer) {
             duration
         }
 
-        setupSpeechToText(client, session);
+        await setupSpeechToText(client, session);
     });
 }
 

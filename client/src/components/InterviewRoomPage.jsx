@@ -76,7 +76,14 @@ export default function InterviewRoomPage() {
   const workletNodeRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const sourceNodeRef = useRef(null);
-  const playingAudioRef = useRef(null);
+
+  // Audio streaming refs
+  const mediaSourceRef = useRef(null);
+  const sourceBufferRef = useRef(null);
+  const audioQueueRef = useRef([]);
+  const isAppendingRef = useRef(false);
+  const audioStreamObjRef = useRef(null);
+  const audioEndReceivedRef = useRef(false);
 
   const projectTitle = location.state?.projectTitle || 'Product Design'
   const userName =
@@ -85,10 +92,10 @@ export default function InterviewRoomPage() {
 
   const projectId = location.state?.projectId || 'null';
   const firstQuestion = location.state?.question || "";
+  const firstQuestionAudio = location.state?.audio || "";
   const interviewId = location.state?.interviewId || 'null';
-  const audio = location.state?.audio || 'null';
   const duration = location.state?.duration || "300000"; // 10 min
-  const [startTime] = useState(() => location.state?.startTime || Date.now());
+  const startTime = location.state?.startTime || Date.now();
 
   const [micOn, setMicOn] = useState(true)
   const [cameraOn, setCameraOn] = useState(true)
@@ -102,7 +109,6 @@ export default function InterviewRoomPage() {
   const listeningRef = useRef(false);
   const lastAnswer = useRef("");
   const timeUp = useRef(false);
-  console.log("starting listening ref: ", listeningRef.current);
 
   const seconds = Math.floor(timeLeft / 1000);
 
@@ -123,58 +129,146 @@ export default function InterviewRoomPage() {
     return () => clearInterval(timer)
   }, [duration, startTime])
 
-  function playAudio(base64Audio, onEnd) {
+
+
+  function startAudioStreaming() {
     setStatus("speaking");
-    console.log("Listening ref inside playaudio: ", listeningRef.current);
     listeningRef.current = false;
     setTranscript("");
 
-    if (playingAudioRef.current) {
-      playingAudioRef.current.pause();
+    console.log("6. started");
+    if (audioStreamObjRef.current) {
+      audioStreamObjRef.current.pause();
+      audioStreamObjRef.current = null;
     }
 
-    const blob = new Blob(
-      [
-        Uint8Array.from(
-          atob(base64Audio),
-          c => c.charCodeAt(0)
-        )
-      ],
-      { type: "audio/mpeg" }
-    );
+    audioQueueRef.current = [];
+    isAppendingRef.current = false;
+    audioEndReceivedRef.current = false;
 
-    const url = URL.createObjectURL(blob);
+    const mediaSource = new MediaSource();
+    mediaSourceRef.current = mediaSource;
 
-    const audioObj = new Audio(url);
-    playingAudioRef.current = audioObj;
+    const audioObj = new Audio();
+    audioObj.src = URL.createObjectURL(mediaSource);
+    audioStreamObjRef.current = audioObj;
+
+    mediaSource.addEventListener("sourceopen", () => {
+      try {
+        const sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+        sourceBufferRef.current = sourceBuffer;
+
+        sourceBuffer.addEventListener("updateend", () => {
+          isAppendingRef.current = false;
+          if (audioQueueRef.current.length > 0) {
+            const nextChunk = audioQueueRef.current.shift();
+            isAppendingRef.current = true;
+            sourceBuffer.appendBuffer(nextChunk);
+          } else if (audioEndReceivedRef.current) {
+            if (mediaSource.readyState === "open") {
+              mediaSource.endOfStream();
+            }
+          }
+        });
+      } catch (err) {
+        console.error("Error adding SourceBuffer: ", err);
+      }
+    });
 
     audioObj.onended = () => {
-      console.log("Audio ended");
-      URL.revokeObjectURL(url);
-      if (playingAudioRef.current === audioObj) {
-        playingAudioRef.current = null;
+      if (audioStreamObjRef.current === audioObj) {
+        audioStreamObjRef.current = null;
       }
-
-      if (onEnd) {
-        setStatus("idle");
-        onEnd();
-      } else {
-        listeningRef.current = true;
-        console.log("Listening ref inside end: ", listeningRef.current);
-        setStatus("listening");
-      }
+      listeningRef.current = true;
+      setStatus("listening");
     };
 
-    audioObj.play().catch(err => console.log("Audio playback failed: ", err));
-  };
+    audioObj.play().catch(err => console.log("Streaming audio play failed: ", err));
+  }
+
+  function playBase64Audio(base64Audio) {
+    console.log("2. first audio plays");
+    setStatus("speaking");
+    listeningRef.current = false;
+    setTranscript("");
+
+    if (audioStreamObjRef.current) {
+      audioStreamObjRef.current.pause();
+      audioStreamObjRef.current = null;
+    }
+
+    const audioUrl = `data:audio/mp3;base64,${base64Audio}`;
+    const audioObj = new Audio(audioUrl);
+    audioStreamObjRef.current = audioObj;
+
+    audioObj.onended = () => {
+      if (audioStreamObjRef.current === audioObj) {
+        audioStreamObjRef.current = null;
+      }
+      listeningRef.current = true;
+      setStatus("listening");
+    };
+
+    console.log("2");
+    audioObj.play().catch(err => {
+      console.log("Audio play failed: ", err);
+      listeningRef.current = true;
+      setStatus("listening");
+    });
+  }
+
+
+
+  function handleAudioChunk(base64Chunk) {
+    const binaryString = atob(base64Chunk);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const arrayBuffer = bytes.buffer;
+
+    const sourceBuffer = sourceBufferRef.current;
+    if (sourceBuffer && !isAppendingRef.current && sourceBuffer.updating === false) {
+      isAppendingRef.current = true;
+      try {
+        sourceBuffer.appendBuffer(arrayBuffer);
+        if (audioStreamObjRef.current && audioStreamObjRef.current.paused) {
+          audioStreamObjRef.current.play().catch(() => { });
+        }
+      } catch (e) {
+        console.error("Error appending buffer: ", e);
+      }
+    } else {
+      audioQueueRef.current.push(arrayBuffer);
+    }
+  }
+
+  function handleAudioEnd() {
+    audioEndReceivedRef.current = true;
+    const mediaSource = mediaSourceRef.current;
+    const sourceBuffer = sourceBufferRef.current;
+    if (mediaSource && sourceBuffer && !isAppendingRef.current && sourceBuffer.updating === false) {
+      if (mediaSource.readyState === "open") {
+        mediaSource.endOfStream();
+      }
+    }
+  }
 
   useEffect(() => {
     startMicrophoneStreaming();
-    playAudio(audio);
+    if (firstQuestionAudio) {
+      console.log("1. first audio exist");
+      playBase64Audio(firstQuestionAudio);
+    } else {
+      console.log("1. first audio not exist");
+      setStatus("listening");
+      listeningRef.current = true;
+    }
     return () => {
       stopMicrophoneStreaming();
-      if (playingAudioRef.current) {
-        playingAudioRef.current.pause();
+      if (audioStreamObjRef.current) {
+        audioStreamObjRef.current.pause();
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -226,12 +320,11 @@ export default function InterviewRoomPage() {
       track.enabled = micOn;
     });
 
+    // Audio engine that manages audio graph
     audioContextRef.current =
       new AudioContext({
         sampleRate: 16000
       });
-
-    console.log(audioContextRef.current.sampleRate);
 
     await audioContextRef.current.audioWorklet.addModule(
       "/audio-processor.js"
@@ -240,6 +333,7 @@ export default function InterviewRoomPage() {
     sourceNodeRef.current =
       audioContextRef.current.createMediaStreamSource(stream);
 
+    // custom node to process audio stream
     workletNodeRef.current =
       new AudioWorkletNode(
         audioContextRef.current,
@@ -263,10 +357,12 @@ export default function InterviewRoomPage() {
 
       const pcm16 = floatTo16BitPCM(float32);
 
+      console.log("3 going to send to websocket");
       if (
         wsRef.current &&
         wsRef.current.readyState === WebSocket.OPEN
       ) {
+        console.log("4 sent to websocket");
         wsRef.current.send(pcm16.buffer);
 
       }
@@ -296,36 +392,53 @@ export default function InterviewRoomPage() {
         case "question":
 
           setQuestion(data.question);
-
-          playAudio(data.audio);
+          console.log("5. starting audio streaming");
+          startAudioStreaming();
 
           break;
+
+        case "audio_chunk":
+          handleAudioChunk(data.audio);
+          break;
+
+        case "audio_end":
+          handleAudioEnd();
+          break;
+
+
 
         case "partial_transcript":
 
           setTranscript(data.text);
-          console.log("partial_transcript: ", data.text);
 
           break;
 
         case "committed_transcript":
-
+          console.time('sst-latency');
           setTranscript(data.text);
           console.log("final_transcript: ", data.text);
 
           listeningRef.current = false;
-          console.log("Listening ref after final answer: ", listeningRef.current);
           setStatus("idle");
           lastAnswer.current = data.text;
 
           break;
 
-        case "interview_end":
-          playAudio(data.audio, () => {
-            endInterview();
-          });
+        case "interview_end": {
+          setQuestion("We've reached the end of the interview. Thank you for your presentation.")
+          const checkAndEnd = () => {
+            if (audioStreamObjRef.current) {
+              audioStreamObjRef.current.onended = () => {
+                endInterview();
+              };
+            } else {
+              endInterview();
+            }
+          };
+          setTimeout(checkAndEnd, 500);
 
           break;
+        }
 
         case "error":
 
@@ -359,7 +472,6 @@ export default function InterviewRoomPage() {
   }
 
   async function endInterview(errorMsg) {
-    console.log("Inside end interview");
     stopMicrophoneStreaming();
     navigate('/processing', {
       state: {
@@ -565,7 +677,7 @@ export default function InterviewRoomPage() {
                       <p className="mb-1 text-xs font-medium text-slate-400">
                         "AI Interviewer"
                       </p>
-                      <p>{timeUp.current ? "We've reached the end of the interview. Thank you for your presentation." : status === "thinking" ? "Thinking..." : question}</p>
+                      <p>{status === "thinking" ? "Thinking..." : question}</p>
                     </div>
                   )}
                   {transcript && (

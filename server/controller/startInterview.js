@@ -114,11 +114,17 @@ export const startInterview = async (req, res) => {
             })
         }
 
-        // Processing Audio
-        const elevenlabsAudio = await generateAudio(question);
-
         const startTime = Date.now();
 
+        let audio = null;
+        try {
+            console.log("Generating audio for the first question...");
+            audio = await generateAudio(question);
+        } catch (audioErr) {
+            console.error("Failed to generate audio for the first question: ", audioErr);
+        }
+
+        console.log("sending duration: ", project.InterviewDuration);
         const interviewRef = await db.collection('interviews').add({
             projectId: projectId,
             userId: project.UserId,
@@ -133,12 +139,13 @@ export const startInterview = async (req, res) => {
             createdAt: new Date()
         });
 
+        console.log("question 1 asked");
         res.status(200).json({
             question,
-            audio: elevenlabsAudio,
+            audio,
             interviewId: interviewRef.id,
             projectId,
-            duration: project.duration,
+            duration: project.InterviewDuration,
             startTime,
         })
 

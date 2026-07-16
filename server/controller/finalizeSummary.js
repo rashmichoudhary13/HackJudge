@@ -1,9 +1,23 @@
 import ai from "../config/gemini.js";
 import { db } from '../config/firebaseAdmin.js';
+import { sessions } from '../Socket/sessionManager.js';
 
 export const generateSummary = async (req, res) => {
     try {
         const { lastAnswer, interviewId } = req.body;
+
+        // Clean up the session from the Map and close ElevenLabs STT
+        const session = sessions.get(interviewId);
+        if (session) {
+            if (session.elevenLabsSTT) {
+                try {
+                    session.elevenLabsSTT.close();
+                } catch (e) {
+                    console.error("Error closing ElevenLabs STT in finalizeSummary:", e);
+                }
+            }
+            sessions.delete(interviewId);
+        }
 
         const docRef = await db.collection('interviews').doc(interviewId).get();
         const interview = docRef.data();

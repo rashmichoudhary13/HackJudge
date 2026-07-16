@@ -7,7 +7,7 @@ import { ImUserTie } from "react-icons/im";
 import { HiOutlineTrash } from "react-icons/hi2";
 import Loader from '../components/Loader.jsx'
 import { AlertTriangle, X } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 
 
 export default function DashboardPage() {
@@ -280,6 +280,25 @@ export default function DashboardPage() {
                     </div>
                   </motion.div>
 
+                  {
+                    selectedProject?.feedback.length == 0 && (
+                      <div className="flex items-center">
+                        <button
+                          onClick={handleStartButton}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-110 cursor-pointer"
+                        >
+                          Start Again
+                        </button>
+
+                        <button
+                          onClick={handleDelete}
+                          className="ml-6 inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-110 cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )
+                  }
                   {/* Evaluation Details */}
                   {
                     selectedProject?.feedback && selectedProject.feedback.length > 0 && (

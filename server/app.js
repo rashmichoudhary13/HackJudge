@@ -8,7 +8,7 @@ import { initializeInterviewWebSocket } from "./webSocket.js";
 const app = express();
 
 const allowedOrign = process.env.EXPRESS_FRONTEND_URL;
-app.use(cors({origin: allowedOrign, credentials: true}));
+app.use(cors({ origin: allowedOrign, credentials: true }));
 
 app.use(express.json());
 app.use('/', routes);
@@ -21,7 +21,7 @@ initializeInterviewWebSocket(httpServer);
 
 const PORT = process.env.PORT || 3000;
 
-httpServer.listen(PORT,() => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
   console.log(`🎤 Interview WebSocket: ws://localhost:${PORT}/interview`);
 });
