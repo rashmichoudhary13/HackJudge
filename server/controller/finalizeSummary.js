@@ -9,13 +9,14 @@ export const generateSummary = async (req, res) => {
         // Clean up the session from the Map and close ElevenLabs STT
         const session = sessions.get(interviewId);
         if (session) {
-            if (session.elevenLabsSTT) {
+            if (session.deepgramSTT) {
                 try {
-                    session.elevenLabsSTT.close();
+                    session.deepgramSTT.close();
                 } catch (e) {
-                    console.error("Error closing ElevenLabs STT in finalizeSummary:", e);
+                    console.error("Error closing Deepgram STT in finalizeSummary:", e);
                 }
             }
+
             sessions.delete(interviewId);
         }
 

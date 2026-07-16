@@ -131,16 +131,30 @@ export default function InterviewRoomPage() {
 
 
 
+  function cleanupAudioStream() {
+    if (audioStreamObjRef.current) {
+      try {
+        audioStreamObjRef.current.pause();
+        const oldUrl = audioStreamObjRef.current.src;
+        audioStreamObjRef.current.src = "";
+        audioStreamObjRef.current.load();
+        if (oldUrl && oldUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(oldUrl);
+        }
+      } catch (e) {
+        console.error("Error during audio cleanup: ", e);
+      }
+      audioStreamObjRef.current = null;
+    }
+  }
+
   function startAudioStreaming() {
     setStatus("speaking");
     listeningRef.current = false;
     setTranscript("");
 
     console.log("6. started");
-    if (audioStreamObjRef.current) {
-      audioStreamObjRef.current.pause();
-      audioStreamObjRef.current = null;
-    }
+    cleanupAudioStream();
 
     audioQueueRef.current = [];
     isAppendingRef.current = false;
@@ -154,6 +168,7 @@ export default function InterviewRoomPage() {
     audioStreamObjRef.current = audioObj;
 
     mediaSource.addEventListener("sourceopen", () => {
+      if (mediaSource.sourceBuffers.length > 0) return;
       try {
         const sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
         sourceBufferRef.current = sourceBuffer;
@@ -173,7 +188,7 @@ export default function InterviewRoomPage() {
       } catch (err) {
         console.error("Error adding SourceBuffer: ", err);
       }
-    });
+    }, { once: true });
 
     audioObj.onended = () => {
       if (audioStreamObjRef.current === audioObj) {
@@ -192,10 +207,7 @@ export default function InterviewRoomPage() {
     listeningRef.current = false;
     setTranscript("");
 
-    if (audioStreamObjRef.current) {
-      audioStreamObjRef.current.pause();
-      audioStreamObjRef.current = null;
-    }
+    cleanupAudioStream();
 
     const audioUrl = `data:audio/mp3;base64,${base64Audio}`;
     const audioObj = new Audio(audioUrl);
@@ -267,9 +279,7 @@ export default function InterviewRoomPage() {
     }
     return () => {
       stopMicrophoneStreaming();
-      if (audioStreamObjRef.current) {
-        audioStreamObjRef.current.pause();
-      }
+      cleanupAudioStream();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -426,6 +436,7 @@ export default function InterviewRoomPage() {
 
         case "interview_end": {
           setQuestion("We've reached the end of the interview. Thank you for your presentation.")
+          startAudioStreaming();
           const checkAndEnd = () => {
             if (audioStreamObjRef.current) {
               audioStreamObjRef.current.onended = () => {

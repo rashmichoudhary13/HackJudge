@@ -23,12 +23,13 @@ export async function setupSpeechToText(client, sessionInfo) {
         // 2. Create Gemini chat session using separate processInterview_ws module
         const chat = initializeChat(project, config, conversation);
 
-        // 3. Open ElevenLabs STT WebSocket
-        const elevenLabsSTT = new WebSocket(
-            process.env.ELEVENLAB_STT_URI,
+        // 3. Open Deepgram STT WebSocket
+        const deepgramUrl = "wss://api.deepgram.com/v1/listen?encoding=linear16&sample_rate=16000&model=nova-2&language=en-US&interim_results=true&endpointing=500";
+        const deepgramSTT = new WebSocket(
+            deepgramUrl,
             {
                 headers: {
-                    "xi-api-key": process.env.ELEVENLABS_API_KEY
+                    Authorization: `Token ${process.env.DEEPGRAM_API_KEY}`
                 }
             }
         );
@@ -39,53 +40,66 @@ export async function setupSpeechToText(client, sessionInfo) {
             projectId,
             client,
             chat,
-            elevenLabsSTT,
+            deepgramSTT,
             startTime,
             duration,
             conversation,
-            audioQueue: []
+            audioQueue: [],
+            transcriptParts: []
         };
         sessions.set(interviewId, session);
 
+        const keepAliveInterval = setInterval(() => {
+            if (deepgramSTT.readyState === WebSocket.OPEN) {
+                deepgramSTT.send(JSON.stringify({ type: "KeepAlive" }));
+            }
+        }, 3000);
 
-
-        elevenLabsSTT.on("open", () => {
-            console.log(`ElevenLabs connected for interview ${interviewId}`);
+        deepgramSTT.on("open", () => {
+            console.log(`Deepgram connected for interview ${interviewId}`);
             // Send all buffered chunks
-            while (session.audioQueue.length > 0 && elevenLabsSTT.readyState === WebSocket.OPEN) {
+            while (session.audioQueue.length > 0 && deepgramSTT.readyState === WebSocket.OPEN) {
                 const chunk = session.audioQueue.shift();
-                elevenLabsSTT.send(JSON.stringify({
-                    message_type: "input_audio_chunk",
-                    audio_base_64: chunk.toString("base64"),
-                    commit: false,
-                    sample_rate: 16000
-                }));
+                deepgramSTT.send(chunk);
             }
         });
 
-        elevenLabsSTT.on("message", async (data) => {
-            const result = JSON.parse(data.toString());
-            console.log(result.message_type);
+        deepgramSTT.on("message", async (data) => {
+            let result;
+            try {
+                result = JSON.parse(data.toString());
+            } catch (err) {
+                console.error("Error parsing Deepgram message JSON:", err);
+                return;
+            }
 
-            switch (result.message_type) {
-                case "session_started":
-                    console.log(`STT session started for ${interviewId}`);
-                    break;
+            const alternatives = result.channel?.alternatives || [];
+            const transcript = alternatives[0]?.transcript || "";
 
-                case "partial_transcript":
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({
-                            type: "partial_transcript",
-                            text: result.text
-                        }));
-                    }
-                    break;
+            if (result.is_final) {
+                if (transcript.trim()) {
+                    session.transcriptParts.push(transcript.trim());
+                }
+            } else {
+                // Interim result
+                const currentPartial = [...session.transcriptParts, transcript].filter(Boolean).join(" ");
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: "partial_transcript",
+                        text: currentPartial
+                    }));
+                }
+            }
 
-                case "committed_transcript": {
+            if (result.speech_final) {
+                const finalTranscript = session.transcriptParts.join(" ").trim();
+                session.transcriptParts = []; // Reset for next turn
+
+                if (finalTranscript) {
                     if (client.readyState === WebSocket.OPEN) {
                         client.send(JSON.stringify({
                             type: "committed_transcript",
-                            text: result.text,
+                            text: finalTranscript,
                         }));
                     }
 
@@ -95,13 +109,10 @@ export async function setupSpeechToText(client, sessionInfo) {
                         console.log(`Interview duration reached for ${interviewId}`);
 
                         // Append the final answer
-                        session.conversation[session.conversation.length - 1].candidateAnswer = result.text;
+                        session.conversation[session.conversation.length - 1].candidateAnswer = finalTranscript;
                         await db.collection('interviews').doc(interviewId).update({
                             conversation: session.conversation
                         });
-
-                        // Stream end audio
-                        await streamTTS("We've reached the end of the interview. Thank you for your presentation.", client);
 
                         if (client.readyState === WebSocket.OPEN) {
                             client.send(JSON.stringify({
@@ -109,11 +120,14 @@ export async function setupSpeechToText(client, sessionInfo) {
                             }));
                         }
 
-                        // Close ElevenLabs
+                        // Stream end audio
+                        await streamTTS("We've reached the end of the interview. Thank you for your presentation.", client);
+
+                        //Close Deepgram
                         try {
-                            elevenLabsSTT.close();
+                            deepgramSTT.close();
                         } catch (err) {
-                            console.error("Error closing ElevenLabs STT on timeout:", err);
+                            console.error("Error closing Deepgram STT on timeout:", err);
                         }
 
                         // Clean up
@@ -121,10 +135,10 @@ export async function setupSpeechToText(client, sessionInfo) {
                         return;
                     }
 
-                    console.log(`Processing committed transcript for ${interviewId}: "${result.text}"`);
+                    console.log(`Processing committed transcript for ${interviewId}: "${finalTranscript}"`);
                     try {
                         // Append the user transcript to conversation
-                        session.conversation[session.conversation.length - 1].candidateAnswer = result.text;
+                        session.conversation[session.conversation.length - 1].candidateAnswer = finalTranscript;
 
                         // Persist to Firestore
                         await db.collection('interviews').doc(interviewId).update({
@@ -133,7 +147,7 @@ export async function setupSpeechToText(client, sessionInfo) {
 
                         // Send user response to Gemini chat and get next question
                         console.time('Gemini response time');
-                        const question = await generateNextQuestion(session.chat, result.text);
+                        const question = await generateNextQuestion(session.chat, finalTranscript);
                         console.timeEnd('Gemini response time');
 
                         // Send the next question text to the client
@@ -167,50 +181,42 @@ export async function setupSpeechToText(client, sessionInfo) {
                             }));
                         }
                     }
-                    break;
                 }
-
-                default:
-                    console.log(result);
             }
         });
 
-        elevenLabsSTT.on("error", (err) => {
-            console.error(`ElevenLabs error for interview ${interviewId}: `, err);
+        deepgramSTT.on("error", (err) => {
+            console.error(`Deepgram error for interview ${interviewId}: `, err);
         });
 
-        elevenLabsSTT.on("close", (code, reason) => {
-            console.log(`ElevenLabs connection closed for interview ${interviewId}: ${code} - ${reason}`);
-            console.log("Reason: ", { reason: reason.toString(), length: reason.length });
+        deepgramSTT.on("close", (code, reason) => {
+            console.log(`Deepgram connection closed for interview ${interviewId}: ${code} - ${reason}`);
+            clearInterval(keepAliveInterval);
         });
 
         // Set up client messages (microphone stream)
         client.on("message", (message, isBinary) => {
             if (!isBinary) return;
 
-            if (elevenLabsSTT.readyState !== WebSocket.OPEN) {
-                // Buffer the chunk until the ElevenLabs socket is open
+            if (deepgramSTT.readyState !== WebSocket.OPEN) {
+                // Buffer the chunk until the Deepgram socket is open
                 session.audioQueue.push(message);
                 return;
             }
 
-            // Sending to ElevenLabs WebSocket to get transcript
-            elevenLabsSTT.send(JSON.stringify({
-                message_type: "input_audio_chunk",
-                audio_base_64: message.toString("base64"),
-                commit: false,
-                sample_rate: 16000
-            }));
+            // Sending to Deepgram WebSocket directly as binary to get transcript
+            deepgramSTT.send(message);
         });
 
         // Handle client connection closing
         client.on("close", () => {
             console.log(`Client disconnected for interview ${interviewId}`);
             try {
-                elevenLabsSTT.close();
+                deepgramSTT.close();
             } catch (err) {
-                console.error("Error closing ElevenLabs STT on client disconnect:", err);
+                console.error("Error closing Deepgram STT on client disconnect:", err);
             }
+
             sessions.delete(interviewId);
         });
 
