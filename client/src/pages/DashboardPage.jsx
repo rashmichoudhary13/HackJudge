@@ -131,13 +131,13 @@ export default function DashboardPage() {
     >
       <Navbar />
 
-      <main className="relative flex flex-1 items-start justify-center px-4 py-8 sm:px-6 md:py-12">
+      <main className="relative flex flex-1 items-start justify-center px-4 py-8 sm:px-6 md:py-5">
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,92,246,0.1),transparent)]"
           aria-hidden
         />
 
-        <div className="relative w-full max-w-6xl">
+        <div className="relative w-full">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
 
             {/* LEFT SIDEBAR (No Details Changed, matching the image completely, styled premiumly) */}
