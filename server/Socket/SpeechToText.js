@@ -24,7 +24,7 @@ export async function setupSpeechToText(client, sessionInfo) {
         const chat = initializeChat(project, config, conversation);
 
         // 3. Open Deepgram STT WebSocket
-        const deepgramUrl = "wss://api.deepgram.com/v1/listen?encoding=linear16&sample_rate=16000&model=nova-2&language=en-US&interim_results=true&endpointing=500";
+        const deepgramUrl = "wss://api.deepgram.com/v1/listen?encoding=linear16&sample_rate=16000&model=nova-2&language=en-US&interim_results=true&endpointing=600";
         const deepgramSTT = new WebSocket(
             deepgramUrl,
             {

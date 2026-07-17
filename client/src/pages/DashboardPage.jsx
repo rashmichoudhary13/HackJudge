@@ -37,8 +37,6 @@ export default function DashboardPage() {
     selectedProject.feedback[0].conversation
     : selectedProject?.feedback?.[selectedAttemptIdx].conversation
 
-  console.log(conversation);
-
   useEffect(() => {
     const errorFromState = location.state?.interviewError;
     if (errorFromState) {
@@ -80,7 +78,6 @@ export default function DashboardPage() {
 
         const data = await response.json();
         setProjects(data);
-        console.log(data);
         setLoading(false);
       } catch {
         setLoading(false);
@@ -91,7 +88,6 @@ export default function DashboardPage() {
   }, [userId])
 
   const handleStartButton = () => {
-    console.log("navigating to processing")
     navigate('/interview-processing', {
       state: {
         projectId: selectedProject.projectId,
@@ -117,8 +113,6 @@ export default function DashboardPage() {
       }
 
       const result = await response.json();
-
-      console.log(result.message);
 
       const filteredProject = project.filter((item) => item.projectId !== selectedProject.projectId);
       setProjects(filteredProject);

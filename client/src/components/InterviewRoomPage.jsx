@@ -198,7 +198,7 @@ export default function InterviewRoomPage() {
       setStatus("listening");
     };
 
-    console.timeEnd('sst-latency');
+    // console.timeEnd('sst-latency');
     audioObj.play().catch(err => console.log("Streaming audio play failed: ", err));
   }
 
@@ -418,7 +418,7 @@ export default function InterviewRoomPage() {
           break;
 
         case "committed_transcript":
-          console.time('sst-latency');
+          // console.time('sst-latency');
           setTranscript(data.text);
           // console.log("final_transcript: ", data.text);
 

@@ -23,13 +23,15 @@ export const initializeChat = (project, config, conversation) => {
 
         Ask the questions on these criteria and also follow this evaluation priority in order:
 
-        * Innovation (Highest priority)
-        * Impact & Benefits (Real-world value and usefulness)
-        * Feasibility (Practicality, complexity, and ability to build)
-        * Implementation (engineering, architecture, technical decisions) (Technical Depth)
-        * Design & User Experience
+        Your primary evaluation criteria:
+           ${config.primaryCriteria.join("\n")}
 
-        Your objective is to evaluate the candidate across ALL judging criteria within the available interview time.
+        Your secondary evaluation criteria:
+           ${config.secondaryCriteria.join("\n")}
+
+        Spend approximately 80% of your questions evaluating the primary criteria.
+
+        Use the secondary criteria only if important information is missing or if there is sufficient interview time.
 
         Do not spend too much time on a single criterion.
 
@@ -68,11 +70,11 @@ export const initializeChat = (project, config, conversation) => {
     const firstUserParts = [
         {
             text: `Here are the details of my hackathon project for your evaluation:
-* Project Title: ${project.Title}
-* Problem Statement: ${project.ProblemStatement}
-* Project Description: ${project.Description}
-* Tech Stack: ${project.TechStack}
-* Features: ${project.Feature}`
+            * Project Title: ${project.Title}
+            * Problem Statement: ${project.ProblemStatement}
+            * Project Description: ${project.Description}
+            * Tech Stack: ${project.TechStack}
+            * Features: ${project.Feature}`
         }
     ];
 

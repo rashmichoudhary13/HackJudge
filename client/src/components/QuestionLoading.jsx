@@ -10,7 +10,7 @@ const QuestionProcessingPage = () => {
 
   useEffect(() => {
     const fetchFirstQuestion = async () => {
-      console.log("fetching questions")
+      // console.log("fetching questions")
       try {
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/startInterview`, {
           method: "GET",
@@ -20,7 +20,7 @@ const QuestionProcessingPage = () => {
         })
 
         if (!response.ok) {
-          console.log("Cannot generate first question");
+          // console.log("Cannot generate first question");
           const errData = await response.json().catch(() => ({}));
           const errMsg = errData.message || "can't generate interview right now try after some time.";
           navigate('/', {
@@ -32,10 +32,7 @@ const QuestionProcessingPage = () => {
         }
 
         const data = await response.json();
-        console.log("data getting: ", data);
 
-        console.log("processing page duration: ", data.duration);
-        console.log("processing page starttime: ", data.startTime);
         navigate('/interview-room', {
           state: {
             question: data.question,
