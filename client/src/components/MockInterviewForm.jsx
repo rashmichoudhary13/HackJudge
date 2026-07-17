@@ -277,7 +277,7 @@ export default function MockInterviewForm({ className = '' }) {
             Interview Duration:
           </label>
           <select name="duration" value={values.duration} onChange={handleChange} className="rounded-lg px-2 py-2 border border-slate-200 bg-slate-50 outline-none ring-violet-500/30 transition focus:border-violet-500/60 focus:bg-white focus:ring-2">
-            <option value="1">1 min</option>
+            <option value="3">3 min</option>
             <option value="5">5 min</option>
             <option value="15">15 min</option>
             <option value="30">30 min</option>

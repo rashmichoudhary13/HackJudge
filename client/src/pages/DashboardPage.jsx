@@ -33,6 +33,12 @@ export default function DashboardPage() {
     ? selectedProject.feedback[0]
     : selectedProject?.feedback?.[selectedAttemptIdx]
 
+  const conversation = selectedProject?.feedback?.length === 1 ?
+    selectedProject.feedback[0].conversation
+    : selectedProject?.feedback?.[selectedAttemptIdx].conversation
+
+  console.log(conversation);
+
   useEffect(() => {
     const errorFromState = location.state?.interviewError;
     if (errorFromState) {
@@ -51,7 +57,10 @@ export default function DashboardPage() {
   const strokeWidth = 8
   const circumference = 2 * Math.PI * radius
 
-  const score = Number(currentFeedback?.score ?? 0)
+  const problemScore = currentFeedback?.categoryfeedback?.problem?.score ?? 0
+  const solutionScore = currentFeedback?.categoryfeedback?.solution?.score ?? 0
+  const innovationScore = currentFeedback?.categoryfeedback?.innovation?.score ?? 0
+  const score = Math.round((problemScore + solutionScore + innovationScore) / 3)
   const strokeDashoffset = circumference - (score / 10) * circumference
 
   useEffect(() => {
@@ -71,6 +80,7 @@ export default function DashboardPage() {
 
         const data = await response.json();
         setProjects(data);
+        console.log(data);
         setLoading(false);
       } catch {
         setLoading(false);
@@ -311,35 +321,42 @@ export default function DashboardPage() {
                               Select Attempt
                             </span>
                             <div className="flex flex-row gap-3 overflow-x-auto pb-1">
-                              {selectedProject.feedback.map((attempt, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() => setSelectedAttemptIdx(index)}
-                                  className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 text-sm font-medium transition cursor-pointer shrink-0 ${selectedAttemptIdx === index
-                                    ? 'border-violet-200 bg-violet-50 text-violet-750 shadow-sm shadow-violet-100/50'
-                                    : 'border-slate-200 bg-white text-slate-650 hover:bg-slate-50 hover:text-slate-905'
-                                    }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold">Attempt {index + 1}</span>
-                                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${selectedAttemptIdx === index
-                                      ? 'bg-violet-100 text-violet-850'
-                                      : 'bg-slate-100 text-slate-600'
-                                      }`}>
-                                      Score: {attempt.score}
-                                    </span>
-                                  </div>
-                                  <svg
-                                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ${selectedAttemptIdx === index ? 'text-violet-600 scale-110' : 'text-slate-400'
+                              {selectedProject.feedback.map((attempt, index) => {
+                                const attemptScore = Math.round(
+                                  ((attempt?.categoryfeedback?.problem?.score ?? 0) +
+                                    (attempt?.categoryfeedback?.solution?.score ?? 0) +
+                                    (attempt?.categoryfeedback?.innovation?.score ?? 0)) / 3
+                                );
+                                return (
+                                  <button
+                                    key={index}
+                                    onClick={() => setSelectedAttemptIdx(index)}
+                                    className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 text-sm font-medium transition cursor-pointer shrink-0 ${selectedAttemptIdx === index
+                                      ? 'border-violet-200 bg-violet-50 text-violet-750 shadow-sm shadow-violet-100/50'
+                                      : 'border-slate-200 bg-white text-slate-650 hover:bg-slate-50 hover:text-slate-905'
                                       }`}
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
                                   >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
-                                  </svg>
-                                </button>
-                              ))}
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold">Attempt {index + 1}</span>
+                                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${selectedAttemptIdx === index
+                                        ? 'bg-violet-100 text-violet-850'
+                                        : 'bg-slate-100 text-slate-600'
+                                        }`}>
+                                        Score: {attemptScore}
+                                      </span>
+                                    </div>
+                                    <svg
+                                      className={`h-4 w-4 shrink-0 transition-transform duration-200 ${selectedAttemptIdx === index ? 'text-violet-600 scale-110' : 'text-slate-400'
+                                        }`}
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                                    </svg>
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
@@ -347,93 +364,310 @@ export default function DashboardPage() {
                         {/* Content Grid */}
                         <motion.div
                           key={`eval-${selectedIdx}-${selectedAttemptIdx}`}
-                          className="grid grid-cols-1 gap-6 lg:grid-cols-3"
+                          className="flex flex-col gap-8"
                           initial={{ opacity: 0, y: 12 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3 }}
                         >
-                          {/* Summary & Improvements - 2 cols */}
-                          <div className="flex flex-col gap-6 lg:col-span-2">
-                            {/* Summary Card */}
-                            <div className="rounded-xl border border-slate-150 bg-slate-50/50 p-5 shadow-sm flex-1">
-                              <h3 className="text-sm font-semibold uppercase tracking-wider text-violet-655 flex items-center gap-2">
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                </svg>
-                                Summary:
-                              </h3>
-                              <p className="mt-2.5 text-sm text-slate-700 leading-relaxed">
-                                {currentFeedback?.summary}
-                              </p>
+                          {/* Summary & Overall Score Row */}
+                          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                            {/* Conversation Summary Card */}
+                            <div className="rounded-xl border border-slate-150 bg-slate-50/50 p-5 shadow-sm flex flex-col justify-between lg:col-span-2">
+                              <div>
+                                <h3 className="text-sm font-semibold uppercase tracking-wider text-violet-655 flex items-center gap-2">
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                  </svg>
+                                  Conversation Summary:
+                                </h3>
+                                <p className="mt-3.5 text-sm text-slate-700 leading-relaxed">
+                                  {currentFeedback?.convosummary || "No summary available for this attempt."}
+                                </p>
+                              </div>
                             </div>
 
-                            {/* Improvement Card */}
-                            <div className="rounded-xl border border-slate-150 bg-slate-50/50 p-5 shadow-sm flex-1">
-                              <h3 className="text-sm font-semibold uppercase tracking-wider text-violet-655 flex items-center gap-2">
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                                </svg>
-                                Improvement:
+                            {/* Score Ring Card - 1 col */}
+                            <div className="flex flex-col items-center justify-center rounded-xl border border-slate-150 bg-slate-50/50 p-6 text-center shadow-sm">
+                              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-6">
+                                Score:
                               </h3>
-                              <p className="mt-2.5 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-                                {currentFeedback?.improvement}
+
+                              {/* Circular progress gauge */}
+                              <div className="relative flex items-center justify-center h-48 w-48">
+                                {/* Outer decorative ring */}
+                                <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                                  <circle
+                                    cx="96"
+                                    cy="96"
+                                    r="85"
+                                    className="text-slate-200"
+                                    strokeWidth="1"
+                                    stroke="currentColor"
+                                    fill="transparent"
+                                  />
+                                  {/* Track ring */}
+                                  <circle
+                                    cx="96"
+                                    cy="96"
+                                    r="70"
+                                    className="text-slate-100"
+                                    strokeWidth={strokeWidth}
+                                    stroke="currentColor"
+                                    fill="transparent"
+                                  />
+                                  {/* Active progress ring */}
+                                  <motion.circle
+                                    cx="96"
+                                    cy="96"
+                                    r={radius}
+                                    className="text-violet-600 drop-shadow-[0_0_8px_rgba(139,92,246,0.2)]"
+                                    strokeWidth={strokeWidth}
+                                    strokeDasharray={circumference}
+                                    initial={{ strokeDashoffset: circumference }}
+                                    animate={{ strokeDashoffset: strokeDashoffset }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    strokeLinecap="round"
+                                    stroke="currentColor"
+                                    fill="transparent"
+                                  />
+                                </svg>
+                                <div className="text-center z-10 flex items-baseline justify-center">
+                                  <span className="text-5xl font-extrabold text-slate-900 tracking-tight">{score}</span>
+                                </div>
+                              </div>
+
+                              <p className="mt-6 text-xs text-slate-500 max-w-[200px]">
+                                Calculated average score out of 10 across all judging criteria
                               </p>
                             </div>
                           </div>
 
-                          {/* Score Ring Card - 1 col */}
-                          <div className="flex flex-col items-center justify-center rounded-xl border border-slate-150 bg-slate-50/50 p-6 text-center shadow-sm">
-                            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-6">
-                              Score:
+                          {/* Category Rubrics (Detailed Scoring) */}
+                          <div className="flex flex-col gap-4">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                              Category Rubrics
                             </h3>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                              {/* Problem Understanding Card */}
+                              <div className="rounded-xl border border-slate-150 bg-slate-50/50 p-5 shadow-sm flex flex-col justify-between">
+                                <div>
+                                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                    <h4 className="text-sm font-bold text-slate-800">Problem Understanding</h4>
+                                    <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-850">
+                                      {currentFeedback?.categoryfeedback?.problem?.score ?? 0}/10
+                                    </span>
+                                  </div>
 
-                            {/* Circular progress gauge matching the double rings of the image */}
-                            <div className="relative flex items-center justify-center h-48 w-48">
-                              {/* Outer decorative ring */}
-                              <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-                                <circle
-                                  cx="96"
-                                  cy="96"
-                                  r="85"
-                                  className="text-slate-200"
-                                  strokeWidth="1"
-                                  stroke="currentColor"
-                                  fill="transparent"
-                                />
-                                {/* Track ring */}
-                                <circle
-                                  cx="96"
-                                  cy="96"
-                                  r="70"
-                                  className="text-slate-100"
-                                  strokeWidth={strokeWidth}
-                                  stroke="currentColor"
-                                  fill="transparent"
-                                />
-                                {/* Active progress ring */}
-                                <motion.circle
-                                  cx="96"
-                                  cy="96"
-                                  r={radius}
-                                  className="text-violet-600 drop-shadow-[0_0_8px_rgba(139,92,246,0.2)]"
-                                  strokeWidth={strokeWidth}
-                                  strokeDasharray={circumference}
-                                  initial={{ strokeDashoffset: circumference }}
-                                  animate={{ strokeDashoffset: strokeDashoffset }}
-                                  transition={{ duration: 0.8, ease: "easeOut" }}
-                                  strokeLinecap="round"
-                                  stroke="currentColor"
-                                  fill="transparent"
-                                />
-                              </svg>
-                              <div className="text-center z-10 flex items-baseline justify-center">
-                                <span className="text-5xl font-extrabold text-slate-900 tracking-tight">{currentFeedback?.score}</span>
+                                  {/* Strengths */}
+                                  <div className="mt-4">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-green-600 flex items-center gap-1.5">
+                                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                      Strengths
+                                    </span>
+                                    <ul className="mt-2 space-y-1">
+                                      {(currentFeedback?.categoryfeedback?.problem?.strength ? currentFeedback.categoryfeedback.problem.strength.split(', ') : []).map((str, idx) => (
+                                        <li key={idx} className="text-xs text-slate-655 list-disc list-inside leading-relaxed">
+                                          {str}
+                                        </li>
+                                      ))}
+                                      {!(currentFeedback?.categoryfeedback?.problem?.strength) && (
+                                        <li className="text-xs text-slate-400 italic">No specific strengths noted.</li>
+                                      )}
+                                    </ul>
+                                  </div>
+
+                                  {/* Weaknesses */}
+                                  <div className="mt-4">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
+                                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                      </svg>
+                                      Weaknesses
+                                    </span>
+                                    <ul className="mt-2 space-y-1">
+                                      {(currentFeedback?.categoryfeedback?.problem?.weakness ? currentFeedback.categoryfeedback.problem.weakness.split(', ') : []).map((wk, idx) => (
+                                        <li key={idx} className="text-xs text-slate-655 list-disc list-inside leading-relaxed">
+                                          {wk}
+                                        </li>
+                                      ))}
+                                      {!(currentFeedback?.categoryfeedback?.problem?.weakness) && (
+                                        <li className="text-xs text-slate-400 italic">No specific weaknesses noted.</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Solution Clarity Card */}
+                              <div className="rounded-xl border border-slate-150 bg-slate-50/50 p-5 shadow-sm flex flex-col justify-between">
+                                <div>
+                                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                    <h4 className="text-sm font-bold text-slate-800">Solution Clarity</h4>
+                                    <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-850">
+                                      {currentFeedback?.categoryfeedback?.solution?.score ?? 0}/10
+                                    </span>
+                                  </div>
+
+                                  {/* Strengths */}
+                                  <div className="mt-4">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-green-600 flex items-center gap-1.5">
+                                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                      Strengths
+                                    </span>
+                                    <ul className="mt-2 space-y-1">
+                                      {(currentFeedback?.categoryfeedback?.solution?.strength ? currentFeedback.categoryfeedback.solution.strength.split(', ') : []).map((str, idx) => (
+                                        <li key={idx} className="text-xs text-slate-655 list-disc list-inside leading-relaxed">
+                                          {str}
+                                        </li>
+                                      ))}
+                                      {!(currentFeedback?.categoryfeedback?.solution?.strength) && (
+                                        <li className="text-xs text-slate-400 italic">No specific strengths noted.</li>
+                                      )}
+                                    </ul>
+                                  </div>
+
+                                  {/* Weaknesses */}
+                                  <div className="mt-4">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
+                                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                      </svg>
+                                      Weaknesses
+                                    </span>
+                                    <ul className="mt-2 space-y-1">
+                                      {(currentFeedback?.categoryfeedback?.solution?.weakness ? currentFeedback.categoryfeedback.solution.weakness.split(', ') : []).map((wk, idx) => (
+                                        <li key={idx} className="text-xs text-slate-655 list-disc list-inside leading-relaxed">
+                                          {wk}
+                                        </li>
+                                      ))}
+                                      {!(currentFeedback?.categoryfeedback?.solution?.weakness) && (
+                                        <li className="text-xs text-slate-400 italic">No specific weaknesses noted.</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Innovation Card */}
+                              <div className="rounded-xl border border-slate-150 bg-slate-50/50 p-5 shadow-sm flex flex-col justify-between">
+                                <div>
+                                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                    <h4 className="text-sm font-bold text-slate-800">Innovation</h4>
+                                    <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-850">
+                                      {currentFeedback?.categoryfeedback?.innovation?.score ?? 0}/10
+                                    </span>
+                                  </div>
+
+                                  {/* Strengths */}
+                                  <div className="mt-4">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-green-600 flex items-center gap-1.5">
+                                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                      Strengths
+                                    </span>
+                                    <ul className="mt-2 space-y-1">
+                                      {(currentFeedback?.categoryfeedback?.innovation?.strength ? currentFeedback.categoryfeedback.innovation.strength.split(', ') : []).map((str, idx) => (
+                                        <li key={idx} className="text-xs text-slate-655 list-disc list-inside leading-relaxed">
+                                          {str}
+                                        </li>
+                                      ))}
+                                      {!(currentFeedback?.categoryfeedback?.innovation?.strength) && (
+                                        <li className="text-xs text-slate-400 italic">No specific strengths noted.</li>
+                                      )}
+                                    </ul>
+                                  </div>
+
+                                  {/* Weaknesses */}
+                                  <div className="mt-4">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
+                                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                      </svg>
+                                      Weaknesses
+                                    </span>
+                                    <ul className="mt-2 space-y-1">
+                                      {(currentFeedback?.categoryfeedback?.innovation?.weakness ? currentFeedback.categoryfeedback.innovation.weakness.split(', ') : []).map((wk, idx) => (
+                                        <li key={idx} className="text-xs text-slate-655 list-disc list-inside leading-relaxed">
+                                          {wk}
+                                        </li>
+                                      ))}
+                                      {!(currentFeedback?.categoryfeedback?.innovation?.weakness) && (
+                                        <li className="text-xs text-slate-400 italic">No specific weaknesses noted.</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                </div>
                               </div>
                             </div>
+                          </div>
 
-                            <p className="mt-6 text-xs text-slate-500 max-w-[200px]">
-                              Based on Judge's innovation, feasibility, and implementation criteria
-                            </p>
+                          {/* Question by Question Review */}
+                          <div className="flex flex-col gap-4">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                              Detailed Q&A Performance Rubric
+                            </h3>
+                            <div className="flex flex-col gap-5">
+                              {currentFeedback?.convofeedback?.map((q, idx) => (
+                                <div key={idx} className="rounded-xl border border-slate-150 bg-slate-50/30 p-5 shadow-sm flex flex-col gap-3">
+                                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                                    <span className="inline-flex items-center rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-750">
+                                      Question {q.no}
+                                    </span>
+                                  </div>
+
+                                  {/* Question Block */}
+                                  <div className="rounded-xl bg-violet-50/50 border border-violet-100/50 p-4 mt-1.5">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-violet-750 flex items-center gap-1.5">
+                                      Question
+                                    </span>
+                                    <p className="mt-1.5 text-xs text-slate-655 leading-relaxed italic">
+                                      "{conversation[idx].judgeQuestion}"
+                                    </p>
+                                  </div>
+
+                                  {/* User Answer Block */}
+                                  <div className="rounded-xl bg-violet-50/50 border border-violet-100/50 p-4 mt-1.5">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-violet-750 flex items-center gap-1.5">
+                                      Answer
+                                    </span>
+                                    <p className="mt-1.5 text-xs text-slate-655 leading-relaxed italic">
+                                      "{conversation[idx].candidateAnswer}"
+                                    </p>
+                                  </div>
+
+                                  {/* Feedback Block */}
+                                  <div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-450 block">Judge's Feedback</span>
+                                    <p className="mt-1 text-sm text-slate-700 leading-relaxed font-medium">
+                                      {q.feedback}
+                                    </p>
+                                  </div>
+
+                                  {/* Model Answer Callout */}
+                                  <div className="rounded-xl bg-violet-50/50 border border-violet-100/50 p-4 mt-1.5">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-violet-750 flex items-center gap-1.5">
+                                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                      </svg>
+                                      Model Answer Pitch
+                                    </span>
+                                    <p className="mt-1.5 text-xs text-slate-655 leading-relaxed italic">
+                                      "{q.modelanswer}"
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                              {(!currentFeedback?.convofeedback || currentFeedback.convofeedback.length === 0) && (
+                                <div className="text-sm text-slate-400 italic text-center py-6 bg-slate-50/30 rounded-xl border border-dashed border-slate-200">
+                                  No question feedback available.
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </motion.div>
 

@@ -153,7 +153,7 @@ export default function InterviewRoomPage() {
     listeningRef.current = false;
     setTranscript("");
 
-    console.log("6. started");
+    // console.log("6. started");
     cleanupAudioStream();
 
     audioQueueRef.current = [];
@@ -198,11 +198,12 @@ export default function InterviewRoomPage() {
       setStatus("listening");
     };
 
+    console.timeEnd('sst-latency');
     audioObj.play().catch(err => console.log("Streaming audio play failed: ", err));
   }
 
   function playBase64Audio(base64Audio) {
-    console.log("2. first audio plays");
+    // console.log("2. first audio plays");
     setStatus("speaking");
     listeningRef.current = false;
     setTranscript("");
@@ -221,7 +222,6 @@ export default function InterviewRoomPage() {
       setStatus("listening");
     };
 
-    console.log("2");
     audioObj.play().catch(err => {
       console.log("Audio play failed: ", err);
       listeningRef.current = true;
@@ -270,10 +270,10 @@ export default function InterviewRoomPage() {
   useEffect(() => {
     startMicrophoneStreaming();
     if (firstQuestionAudio) {
-      console.log("1. first audio exist");
+      // console.log("1. first audio exist");
       playBase64Audio(firstQuestionAudio);
     } else {
-      console.log("1. first audio not exist");
+      // console.log("1. first audio not exist");
       setStatus("listening");
       listeningRef.current = true;
     }
@@ -303,8 +303,6 @@ export default function InterviewRoomPage() {
 
   // Start microphone streaming and convert audio to PCM
   async function startMicrophoneStreaming() {
-
-    console.log("Listening...");
 
     const stream =
       await navigator.mediaDevices.getUserMedia({
@@ -367,14 +365,11 @@ export default function InterviewRoomPage() {
 
       const pcm16 = floatTo16BitPCM(float32);
 
-      console.log("3 going to send to websocket");
       if (
         wsRef.current &&
         wsRef.current.readyState === WebSocket.OPEN
       ) {
-        console.log("4 sent to websocket");
         wsRef.current.send(pcm16.buffer);
-
       }
 
     };
@@ -402,7 +397,6 @@ export default function InterviewRoomPage() {
         case "question":
 
           setQuestion(data.question);
-          console.log("5. starting audio streaming");
           startAudioStreaming();
 
           break;
@@ -426,7 +420,7 @@ export default function InterviewRoomPage() {
         case "committed_transcript":
           console.time('sst-latency');
           setTranscript(data.text);
-          console.log("final_transcript: ", data.text);
+          // console.log("final_transcript: ", data.text);
 
           listeningRef.current = false;
           setStatus("idle");
@@ -470,7 +464,7 @@ export default function InterviewRoomPage() {
   // Stop microphone streaming
   async function stopMicrophoneStreaming() {
 
-    console.log("stopping the microphone");
+    // console.log("stopping the microphone");
     workletNodeRef.current?.disconnect();
 
     sourceNodeRef.current?.disconnect();
