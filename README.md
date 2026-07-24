@@ -54,6 +54,12 @@ HackJudge is an AI-powered mock hackathon interview preparation application. It 
 
 ---
 
+## 🏗️ System Architecture
+
+For a detailed explanation, see [Architecture.md](./Architecture.md).
+
+---
+
 ## ⚙️ Environment Variables
 
 ### Client (`/client/.env`)
