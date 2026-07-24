@@ -3,9 +3,10 @@ server/node_modules
 
 client/.env
 server/.env
+server/scratch
+server/scratch/measure.js
 
 server/serviceAccount.json
 tech.txt
 agent.md
-architeccture_diagram.md
 error

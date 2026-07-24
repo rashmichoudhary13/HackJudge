@@ -6,7 +6,7 @@ This document provides a comprehensive overview of the architecture of **HackJud
 
 ## 📌 System Context (Level 1)
 
-The system consists of the client React application, backend Express/WS server, and external third-party APIs (Google Gemini, ElevenLabs, Firebase, Cloudinary).
+The system consists of the client React application, backend Express/WS server, and external third-party APIs (Google Gemini, ElevenLabs, Deepgram, Firebase, Cloudinary).
 
 ```mermaid
 graph TD
@@ -15,7 +15,8 @@ graph TD
     
     subgraph Third-Party Services
         Server <-->|Gemini API| Gemini[Google Gemini LLM]
-        Server <-->|TTS / WebSocket STT| ElevenLabs[ElevenLabs Voice API]
+        Server <-->|"TTS API (HTTP)"| ElevenLabs[ElevenLabs Voice API]
+        Server <-->|WebSocket STT API| Deepgram[Deepgram STT API]
         Server <-->|Firestore Admin SDK| Firestore[(Firebase Firestore)]
         Client <-->|Firebase Client SDK| FirebaseAuth[Firebase Auth]
         Client <-->|Upload Slides| Cloudinary[Cloudinary CDN]
@@ -30,7 +31,7 @@ A deeper look into how the client and server components communicate and manage s
 
 ```mermaid
 graph TB
-    subgraph Client (Vite + React 19)
+    subgraph "Client (Vite + React 19)"
         LP[Landing & Login Pages]
         DP[Dashboard & History]
         MIF[Project Form & Upload]
@@ -38,7 +39,7 @@ graph TB
         AM[Audio Manager: AudioContext / Worklet]
     end
 
-    subgraph Server (Node.js + Express)
+    subgraph "Server (Node.js + Express)"
         Router[Express Router]
         WSS[WebSocket Server]
         
@@ -62,7 +63,8 @@ graph TB
 
     subgraph AI & Audio Engines
         GeminiEngine[Google GenAI Gemini]
-        ElevenLabsEngine[ElevenLabs STT / TTS]
+        ElevenLabsEngine[ElevenLabs TTS]
+        DeepgramEngine[Deepgram STT]
     end
 
     %% Client Interactions
@@ -85,15 +87,15 @@ graph TB
 
     %% Socket Operations
     WSS --> STT
-    STT -->|Proxy PCM Audio| ElevenLabsEngine
-    ElevenLabsEngine -->|Partial / Committed Transcript| STT
+    STT -->|Proxy PCM Audio| DeepgramEngine
+    DeepgramEngine -->|Partial / Committed Transcript| STT
     STT -->|Transcript| QA
     QA -->|Prompt + Conversation History| GeminiEngine
     GeminiEngine -->|Next Question Text| QA
     QA -->|Synthesize Question| TTS
     TTS -->|TTS Request| ElevenLabsEngine
-    TTS -->|Base64 Audio Buffer| STT
-    STT -->|Websocket Event: question + audio| IRP
+    TTS -->|Stream MP3 Audio Chunks| STT
+    STT -->|Websocket Event: question / audio_chunk / audio_end| IRP
 ```
 
 ---
@@ -108,7 +110,7 @@ sequenceDiagram
     actor Candidate as User (Mic)
     participant Client as React Client (VAD)
     participant Server as Express WebSocket Server
-    participant ElevenLabs as ElevenLabs WebSocket (STT)
+    participant Deepgram as Deepgram WebSocket (STT)
     participant Gemini as Google Gemini API
     participant ElevenLabsTTS as ElevenLabs API (TTS)
 
@@ -116,26 +118,29 @@ sequenceDiagram
     Client->>Client: AudioContext records raw audio
     Client->>Client: Convert float32 to 16-bit PCM
     Client->>Server: Send binary PCM buffer chunks (WebSocket)
-    Server->>ElevenLabs: Forward PCM chunks (WebSocket XI API)
-    ElevenLabs-->>Server: JSON: "partial_transcript"
+    Server->>Deepgram: Forward PCM chunks (WebSocket)
+    Deepgram-->>Server: JSON: "partial_transcript"
     Server-->>Client: WebSocket Event: partial_transcript (Live Subtitles)
     
-    Note over Candidate, Client: User finishes speaking (VAD / Silence)
-    ElevenLabs-->>Server: JSON: "committed_transcript"
+    Note over Candidate, Client: User finishes speaking (Silence / Endpointing)
+    Deepgram-->>Server: JSON: "committed_transcript"
     Server->>Client: WebSocket Event: committed_transcript
-    Server->>ElevenLabs: Close STT connection (prevent timeout)
     
     Note over Server, Gemini: Generate next question contextually
     Server->>Gemini: processInterview_ws() (Project details + Conversation history + Committed text)
     Gemini-->>Server: Next Question Text
+    Server-->>Client: WebSocket Event: "question" (next question text)
     
     Note over Server, ElevenLabsTTS: Convert text response to voice
-    Server->>ElevenLabsTTS: generateAudio(question text)
-    ElevenLabsTTS-->>Server: Base64 Audio Buffer (mp3)
+    Server->>ElevenLabsTTS: streamTTS(question text)
+    ElevenLabsTTS-->>Server: MP3 Audio Stream Chunks
+    loop For each audio chunk
+        Server-->>Client: WebSocket Event: "audio_chunk" (Base64 MP3)
+    end
+    Server-->>Client: WebSocket Event: "audio_end"
     
-    Server-->>Client: WebSocket Event: "question" (includes Text + Base64 Audio)
-    Client->>Client: Decode & Play MP3 blob URL
-    Client->>Candidate: Play audio output (AI Judge speaking)
+    Client->>Client: Append chunks to MediaSource / Buffer
+    Client->>Candidate: Play streaming audio output (AI Judge speaking)
 ```
 
 ---
@@ -175,9 +180,9 @@ erDiagram
         string interviewId FK "Linked interview session"
         string projectId FK "Linked project"
         string userId FK "Linked user"
-        string score "Overall score out of 10"
-        string summary "Diagnostic review of strengths & weaknesses"
-        string improvement "Actionable recommendations for pitch improvement"
+        string convosummary "Brief dialogue synthesis summary"
+        object categoryfeedback "Rubric breakdown for problem, solution, & innovation"
+        array convofeedback "Array of question reviews [{no, feedback, modelanswer}]"
         timestamp createdAt "Feedback creation timestamp"
     }
 
@@ -194,12 +199,12 @@ erDiagram
 - **`LoginPage.jsx` / `SignupPage.jsx`**: Handles authentication workflows leveraging Firebase.
 - **`DashboardPage.jsx`**: Displays a user's projects, lists historical attempts, highlights scorecard metrics, and manages deleting or updating entries.
 - **`MockInterviewForm.jsx`**: Gathers target mock judging parameters: project title, description, features list, tech stack, and slide presentation (PDF upload to Cloudinary).
-- **`InterviewRoomPage.jsx`**: Orchestrates the live voice room. Initializes the custom audio graph using `audio-processor.js` via an `AudioWorkletNode` to downsample to 16kHz PCM on-the-fly, establishes a WebSocket connection, monitors session timers, and controls audio playing blobs.
+- **`InterviewRoomPage.jsx`**: Orchestrates the live voice room. Initializes the custom audio graph using `audio-processor.js` via an `AudioWorkletNode` to downsample to 16kHz PCM on-the-fly, establishes a WebSocket connection, monitors session timers, and handles real-time audio chunk streaming using `MediaSource` API.
 
 ### 2. Server Modules
 - **`webSocket.js`**: Mounts `/interview` endpoint to capture WebSocket requests, loads state from Firestore, and initiates the Speech-to-Text session.
-- **`Socket/SpeechToText.js`**: Creates a proxy gateway. Pipes raw mic streams from the client browser straight to ElevenLabs' Real-time STT WebSocket. On receiving a committed segment, it triggers the question model update and audio creation.
+- **`Socket/SpeechToText.js`**: Creates a proxy gateway. Pipes raw mic streams from the client browser straight to Deepgram's Real-time STT WebSocket. On receiving a committed segment, it triggers the question model update and streams the synthesized audio.
 - **`Socket/processInterview_ws.js`**: Communicates with the Google GenAI SDK. Assembles a tailored prompt incorporating judge persona traits (`judgeConfig.js`), project details, uploaded slide files, and historical conversation arrays to output the next judging question.
-- **`Socket/generatingAudio.js`**: Integrates with ElevenLabs' HTTP text-to-speech REST interface. Produces realistic voice sound bites for the judge's generated questions.
+- **`Socket/generatingAudio.js`**: Integrates with ElevenLabs' HTTP text-to-speech REST interface. Handles both generating the initial question audio (`generateAudio`) and streaming subsequent question voice bites (`streamTTS`) in base64 chunks back to the client.
 - **`controller/startInterview.js`**: Initial setup handler. Downloads project presentation decks from Cloudinary to a temporary PDF, uploads the file onto Gemini space for semantic referencing, generates the initial greeting/question, compiles the first audio snippet, and stores the initial record inside Firestore.
-- **`controller/finalizeSummary.js`**: Post-interview analysis handler. Requests Gemini to analyze the complete dialogue log, requests feedback formatted strictly to a JSON schema, records it in the `feedback` table, and ends the session.
+- **`controller/finalizeSummary.js`**: Post-interview analysis handler. Requests Gemini to analyze the complete dialogue log, requests feedback formatted strictly to a JSON schema containing category feedback and question review arrays, records them in the Firestore `feedback` collection, and ends the session.

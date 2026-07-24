@@ -119,7 +119,6 @@ export const generateSummary = async (req, res) => {
         });
 
         const response1 = JSON.parse(step1result.text)
-        console.log("Summary in backend: ", response1);
 
         const step2Prompt = `
             You are an experienced ${project.judgeType} judge.
@@ -316,7 +315,6 @@ export const generateSummary = async (req, res) => {
         await db.collection("feedback").add({
             interviewId: interviewId,
             projectId: projectId,
-            userId: interview.userId,
             convosummary: response3.conversationSummary?.convosummary || "",
             categoryfeedback: categoryfeedback,
             convofeedback: convofeedback,

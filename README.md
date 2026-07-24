@@ -24,9 +24,9 @@ HackJudge is an AI-powered mock hackathon interview preparation application. It 
 - **AI/ML:** Examines AI-specific aspects including model selection, data pipeline, prompt engineering, inference workflow, evaluation metrics, model limitations, and AI reliability.
 
 ### 3. Smart Voice QA Room
-- Speak naturally to the AI judge using real-time Speech-to-Text.
-- Automated conversation turn-taking powered by **Voice Activity Detection (VAD)**.
-- Authentic, real-time voice speech responses generated via **ElevenLabs Speech Synthesis**.
+- Speak naturally to the AI judge with real-time **Deepgram Speech-to-Text (STT)** integration.
+- Automated, natural conversation turn-taking powered by **Voice Activity Detection (VAD)**.
+- Low-latency, authentic voice responses streamed in real-time chunks via **ElevenLabs Speech Synthesis (TTS)** over WebSockets.
 
 ### 4. Advanced Scorecards & Multiple Attempts
 - View comprehensive scores out of 10 for criteria like Innovation, Feasibility, and Q&A delivery.
@@ -45,11 +45,11 @@ HackJudge is an AI-powered mock hackathon interview preparation application. It 
 - **Authentication**: Firebase Client SDK
 
 ### Server (Backend)
-- **Runtime**: Node.js, Express
-- **Real-time communication**: Websockets (`ws` / Socket.io)
-- **LLM/AI Engine**: Google GenAI (Gemini SDK)
-- **Voice Generation**: ElevenLabs API (TTS)
-- **Speech Recognition**: ElevenLabs STT (Using Websocket API)
+- **Runtime**: Node.js (ES Modules), Express
+- **Real-time communication**: Raw Node.js WebSockets (`ws` library)
+- **LLM/AI Engine**: Google GenAI (Gemini SDK - `gemini-3.1-flash-lite`)
+- **Voice Generation**: ElevenLabs TTS API (Real-time audio chunk streaming)
+- **Speech Recognition**: Deepgram STT (Real-time WebSocket transcription API)
 - **Database & Storage**: Firebase Admin SDK (Firestore)
 
 ---
@@ -58,22 +58,23 @@ HackJudge is an AI-powered mock hackathon interview preparation application. It 
 
 ### Client (`/client/.env`)
 ```env
-VITE_BACKEND_URL=http://localhost:3000
+VITE_BACKEND_URL=http://localhost:8000
 VITE_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 VITE_CLOUDINARY_PRESET_NAME=your_preset_name
+VITE_BACKEND_WS_URL=ws://localhost:8000
 ```
 
 ### Server (`/server/.env`)
 ```env
-PORT=3000
+PORT=8000
+EXPRESS_FRONTEND_URL=http://localhost:5173
 GEMINI_API_KEY=your_google_gemini_api_key
-GEMINI_MODEL=gemini-2.5-flash # or chosen model
-ELEVEN_LABS_API_KEY=your_elevenlabs_api_key
-ELEVEN_LABS_VOICE_ID=your_chosen_voice_id
-ELEVENLAB_STT_URI=your_elevenlabs_websocket_stt_uri {Get the uri from here: https://elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/realtime/server-side-streaming}
+GEMINI_MODEL=gemini-3.1-flash-lite
+ELEVENLABS_API_KEY=your_elevenlabs_api_key
+ELEVENLABS_VOICE_ID=your_elevenlabs_voice_id
+DEEPGRAM_API_KEY=your_deepgram_api_key
 
-# Firebase Admin Credentials
-FIREBASE_SERVICE_ACCOUNT_KEY=path_to_service_account_json
+# Firebase Admin configuration requires serviceAccount.json at /server/serviceAccount.json
 ```
 
 ---
@@ -83,7 +84,7 @@ FIREBASE_SERVICE_ACCOUNT_KEY=path_to_service_account_json
 HackJudge relies on three core Firestore collections:
 1. **`projects`**: Stores the submitted hackathon project details (Title, Problem Statement, Description, Tech Stack, feature list).
 2. **`interviews`**: Keeps track of the live conversation logs (interviewer question / candidate answer) and status metadata.
-3. **`feedback`**: Stores final evaluations containing summary feedback, actionable improvement lists, scores, and relationship IDs (`projectId`, `userId`, `interviewId`).
+3. **`feedback`**: Stores final evaluations containing conversation summaries (`convosummary`), category breakdowns (`categoryfeedback` for problem understanding, solution clarity, innovation), detailed Q&A feedback lists (`convofeedback`), and relationship IDs (`projectId`, `userId`, `interviewId`).
 
 ---
 
@@ -108,7 +109,7 @@ npm install
 Run the development servers concurrently:
 
 ```bash
-# Start backend server (starts on port 3000)
+# Start backend server (starts on port 8000)
 cd server
 npm run dev
 

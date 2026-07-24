@@ -1,6 +1,7 @@
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Menu } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/auth'
+import { useState } from 'react'
 
 const navItems = [
   { label: 'Home', to: '/' },
@@ -9,7 +10,7 @@ const navItems = [
 ]
 
 function navLinkClass({ isActive }) {
-  return `transition hover:text-slate-950${isActive ? ' text-slate-950 font-semibold' : ''}`
+  return `md:block transition hover:text-slate-950${isActive ? ' text-slate-950 font-semibold' : ''}`
 }
 
 const shellClass =
@@ -41,9 +42,21 @@ function PrimaryNav({ className }) {
   )
 }
 
+function MobileNav() {
+  return (
+    <nav className='text-xl' aria-label="Primary">
+      {navItems.map(({ label, to }) => (
+        <NavLink key={to} to={to} end={to === '/'} className='flex flex-col justify-center items-center mb-3'>
+          {label}
+        </NavLink>
+      ))}
+    </nav>
+  )
+}
 
 export default function Navbar({ variant = 'marketing', trailing = null }) {
   const { isLoggedIn, LogOut } = useAuth();
+  const [isOpen, SetIsOpen] = useState(false);
 
   // if (loading) return null;
 
@@ -69,12 +82,13 @@ export default function Navbar({ variant = 'marketing', trailing = null }) {
 
   return (
     <header className={shellClass}>
-      <div className="relative mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:h-16 md:flex-row md:items-center md:justify-between md:py-0">
+      <div className="relative mx-auto flex max-w-7xl gap-3 px-4 py-3 sm:px-6 md:h-16 flex-row md:items-center justify-between md:py-0">
         <div className="flex items-center justify-between gap-4 md:justify-start md:shrink-0">
           <BrandLink />
         </div>
 
-        <PrimaryNav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-slate-600 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:justify-center md:text-[15px]" />
+        <PrimaryNav className="hidden md:flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-slate-600 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:justify-center md:text-[15px]" />
+        <Menu className='block md:hidden mt-1' onClick={() => SetIsOpen(prev => !prev)} />
 
         {isLoggedIn ? (
           <div className="hidden items-center gap-3 md:flex md:shrink-0">
@@ -102,6 +116,32 @@ export default function Navbar({ variant = 'marketing', trailing = null }) {
         )}
 
       </div>
+
+
+      {isOpen && (
+        <div className='absolute bg-white right-0 left-0'>
+          <MobileNav />
+          {isLoggedIn ? (
+            <div className="text-center mt-5 mb-8">
+              <button
+                onClick={handleLogOut}
+                className="rounded-lg cursor-pointer bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 px-7 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Log Out
+              </button>
+            </div>) : (
+            <div className="text-center mt-5 mb-8">
+              <Link
+                to="/login"
+                className="rounded-lg bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 px-7 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Log In
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
     </header>
   )
 }

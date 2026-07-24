@@ -8,21 +8,21 @@ function InterviewerAvatar({ status }) {
   const isListening = status === 'listening';
 
   return (
-    <div className="flex flex-col items-center justify-center gap-6">
-      <div className="relative flex h-24 w-24 items-center justify-center">
+    <div className="flex flex-col items-center justify-center gap-6 mb-[50px] md:mb-0 ">
+      <div className="relative flex h-28 w-28 items-center justify-center">
         {/* Ripples when AI speaks */}
         {isSpeaking && (
           <>
             <div
-              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 opacity-0 animate-ripple"
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-500 opacity-0 animate-ripple"
               style={{ animationDelay: '0s' }}
             />
             <div
-              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 opacity-0 animate-ripple"
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-500 opacity-0 animate-ripple"
               style={{ animationDelay: '0.6s' }}
             />
             <div
-              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 opacity-0 animate-ripple"
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-500 opacity-0 animate-ripple"
               style={{ animationDelay: '1.2s' }}
             />
           </>
@@ -30,32 +30,23 @@ function InterviewerAvatar({ status }) {
 
         {/* Glow behind avatar */}
         <div
-          className={`absolute inset-0 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-indigo-500 blur-xl transition-all duration-500 ${isSpeaking ? 'opacity-85 scale-110' : 'opacity-40 scale-100'
+          className={`absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-500 blur-xl transition-all duration-500 ${isSpeaking ? 'opacity-90 scale-110' : 'opacity-40 scale-100'
             }`}
           aria-hidden
         />
 
         {/* Avatar circle */}
-        <div className="relative flex h-20 w-30 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-blue-500 to-indigo-600 shadow-lg shadow-blue-500/40">
-          <img src="/judge.jpg" className='w-30 rounded-full object-cover' />
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 via-blue-600 to-indigo-600 shadow-lg shadow-blue-500/30 overflow-hidden border-2 border-white/10">
+          <img src="/judge.jpg" className='w-full h-full rounded-full object-cover' />
         </div>
       </div>
 
       {/* Listening Indicator / Turn State */}
-      <div className="h-12 flex flex-col items-center justify-center">
+      <div className="h-10 flex flex-col items-center justify-center">
         {isListening ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex items-end gap-1.5 h-6">
-              <div className="w-1.5 bg-blue-500 rounded-full animate-soundWave" style={{ animationDelay: '0.1s' }} />
-              <div className="w-1.5 bg-indigo-500 rounded-full animate-soundWave" style={{ animationDelay: '0.3s' }} />
-              <div className="w-1.5 bg-violet-500 rounded-full animate-soundWave" style={{ animationDelay: '0.5s' }} />
-              <div className="w-1.5 bg-indigo-500 rounded-full animate-soundWave" style={{ animationDelay: '0.2s' }} />
-              <div className="w-1.5 bg-blue-500 rounded-full animate-soundWave" style={{ animationDelay: '0.4s' }} />
-            </div>
-            <span className="text-xs font-semibold text-blue-600 tracking-wider uppercase animate-pulse">Listening... Your Turn</span>
-          </div>
+          <span className="text-xs font-semibold text-sky-400 tracking-wider uppercase animate-pulse">Listening... Your Turn</span>
         ) : isSpeaking ? (
-          <span className="text-xs font-semibold text-violet-600 tracking-wider uppercase">Judge Speaking...</span>
+          <span className="text-xs font-semibold text-violet-400 tracking-wider uppercase">Judge Speaking...</span>
         ) : (
           <span className="text-xs font-medium text-slate-400">Ready</span>
         )}
@@ -64,10 +55,25 @@ function InterviewerAvatar({ status }) {
   )
 }
 
+function ListeningCircle({ className }) {
+  return (
+    <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 z-10 ${className}`}>
+      <div className="flex items-end gap-1 h-5">
+        <div className="w-1 bg-blue-500 rounded-full animate-soundWave" style={{ animationDelay: '0.1s' }} />
+        <div className="w-1 bg-indigo-500 rounded-full animate-soundWave" style={{ animationDelay: '0.3s' }} />
+        <div className="w-1 bg-violet-500 rounded-full animate-soundWave" style={{ animationDelay: '0.5s' }} />
+        <div className="w-1 bg-indigo-500 rounded-full animate-soundWave" style={{ animationDelay: '0.2s' }} />
+        <div className="w-1 bg-blue-500 rounded-full animate-soundWave" style={{ animationDelay: '0.4s' }} />
+      </div>
+    </div>
+  )
+}
+
 export default function InterviewRoomPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const videoRef = useRef(null)
+  const mobileVideoRef = useRef(null)
+  const desktopVideoRef = useRef(null)
   const streamRef = useRef(null)
   const wsRef = useRef(null);
 
@@ -139,6 +145,7 @@ export default function InterviewRoomPage() {
         audioStreamObjRef.current.src = "";
         audioStreamObjRef.current.load();
         if (oldUrl && oldUrl.startsWith("blob:")) {
+          // delete old temporary audio url from memory
           URL.revokeObjectURL(oldUrl);
         }
       } catch (e) {
@@ -154,6 +161,7 @@ export default function InterviewRoomPage() {
     setTranscript("");
 
     // console.log("6. started");
+    // Stop previous playback if any
     cleanupAudioStream();
 
     audioQueueRef.current = [];
@@ -301,7 +309,7 @@ export default function InterviewRoomPage() {
     return int16;
   }
 
-  // Start microphone streaming and convert audio to PCM
+  // Capture audio from microphone and convert it to PCM
   async function startMicrophoneStreaming() {
 
     const stream =
@@ -512,8 +520,11 @@ export default function InterviewRoomPage() {
           return
         }
         streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
+        if (mobileVideoRef.current) {
+          mobileVideoRef.current.srcObject = stream
+        }
+        if (desktopVideoRef.current) {
+          desktopVideoRef.current.srcObject = stream
         }
       } catch {
         setCameraOn(false)
@@ -543,9 +554,15 @@ export default function InterviewRoomPage() {
     stream.getVideoTracks().forEach((track) => {
       track.enabled = cameraOn
     })
-    if (cameraOn && videoRef.current && videoRef.current.srcObject !== stream) {
-      videoRef.current.srcObject = stream
-      videoRef.current.play().catch(() => { })
+    if (cameraOn) {
+      if (mobileVideoRef.current && mobileVideoRef.current.srcObject !== stream) {
+        mobileVideoRef.current.srcObject = stream
+        mobileVideoRef.current.play().catch(() => { })
+      }
+      if (desktopVideoRef.current && desktopVideoRef.current.srcObject !== stream) {
+        desktopVideoRef.current.srcObject = stream
+        desktopVideoRef.current.play().catch(() => { })
+      }
     }
   }, [cameraOn])
 
@@ -554,28 +571,28 @@ export default function InterviewRoomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-5xl rounded-3xl border border-sky-100 bg-white/90 p-5 shadow-xl shadow-sky-100/60 backdrop-blur-sm sm:p-8">
+    <div className="min-h-screen bg-slate-955 sm:bg-gradient-to-br sm:from-sky-50 sm:via-white sm:to-blue-50 px-0 py-0 sm:px-4 sm:py-6 md:px-6 md:py-8 flex flex-col justify-center items-center">
+      <div className="w-full min-h-screen sm:min-h-0 sm:mx-auto sm:max-w-5xl sm:rounded-3xl sm:border border-transparent sm:border-sky-100 bg-slate-950 sm:bg-white/90 p-4 sm:p-6 md:p-8 shadow-2xl sm:shadow-xl sm:shadow-sky-100/60 backdrop-blur-sm flex flex-col justify-between sm:justify-start">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm text-slate-400">Mock Interview</p>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <p className="text-xs sm:text-sm text-slate-400">Mock Interview</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white sm:text-slate-900">
               {projectTitle}
             </h1>
           </div>
 
-          <div>
+          <div className="flex items-center gap-2 sm:gap-3">
             <span
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors mx-4 bg-emerald-100 text-emerald-700
-                }`}
+              className="shrink-0 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition-colors bg-emerald-500/10 sm:bg-emerald-100 text-emerald-400 sm:text-emerald-700 border border-emerald-500/20 sm:border-transparent"
             >
-              <Timer className='inline w-6 mr-1 mb-1' /> {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
+              <Timer className="inline w-4 sm:w-5 mr-1 mb-0.5" />
+              {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
             </span>
             <span
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${connected
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-amber-100 text-amber-700'
+              className={`shrink-0 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition-colors ${connected
+                ? 'bg-emerald-500/10 sm:bg-emerald-100 text-emerald-400 sm:text-emerald-700 border border-emerald-500/20 sm:border-transparent'
+                : 'bg-amber-500/10 sm:bg-amber-100 text-amber-400 sm:text-amber-700 border border-amber-500/20 sm:border-transparent'
                 }`}
             >
               {connected ? 'Connected' : 'Connecting…'}
@@ -584,14 +601,37 @@ export default function InterviewRoomPage() {
         </div>
 
         {/* Video panels */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-slate-100 sm:aspect-auto sm:min-h-[280px]">
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* AI Interviewer (Desktop) / Combined Call Screen (Mobile) */}
+          <div className="relative flex aspect-[4/4] md:aspect-[4/3] items-center justify-center rounded-2xl bg-slate-900 p-5 shadow-inner">
             <InterviewerAvatar status={status} />
+
+            {/* User Camera Overlay (Mobile only) */}
+            <div className="absolute bottom-4 right-4 w-28 h-36 rounded-2xl overflow-hidden bg-slate-950 border border-white/20 shadow-lg md:hidden">
+              <video
+                ref={mobileVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`h-full w-full object-cover ${cameraOn ? 'block' : 'hidden'}`}
+              />
+              {!cameraOn && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+                  <VideoOff className="h-6 w-6 text-slate-500" aria-hidden />
+                </div>
+              )}
+            </div>
+
+            {/* Listening Circle (Mobile/Desktop overlay corner) */}
+            {status === 'listening' && (
+              <ListeningCircle className="absolute bottom-4 left-4" />
+            )}
           </div>
 
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-900 sm:aspect-auto sm:min-h-[280px]">
+          {/* Desktop User Camera Panel */}
+          <div className="relative hidden md:block aspect-[4/3] overflow-hidden rounded-2xl bg-slate-900">
             <video
-              ref={videoRef}
+              ref={desktopVideoRef}
               autoPlay
               playsInline
               muted
@@ -608,8 +648,8 @@ export default function InterviewRoomPage() {
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="mt-5 flex items-center justify-between px-2">
+        {/* Desktop Controls (hidden on mobile) */}
+        <div className="mt-5 hidden md:flex items-center justify-between px-2">
           <button
             type="button"
             className="rounded-full p-2.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
@@ -638,7 +678,7 @@ export default function InterviewRoomPage() {
             <button
               type="button"
               onClick={handleEndCall}
-              className="rounded-full bg-red-500 p-3.5 text-white shadow-md shadow-red-500/30 transition hover:bg-red-600"
+              className="rounded-full bg-red-500 p-3.5 text-white shadow-md shadow-red-500/30 transition hover:bg-red-650"
               aria-label="End call"
             >
               <PhoneOff className="h-5 w-5" />
@@ -649,7 +689,7 @@ export default function InterviewRoomPage() {
               onClick={() => setCameraOn((on) => !on)}
               className={`rounded-full p-3.5 shadow-sm transition ${cameraOn
                 ? 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50'
-                : 'bg-slate-200 text-slate-600'
+                : 'bg-slate-200 text-slate-650'
                 }`}
               aria-label={cameraOn ? 'Turn off camera' : 'Turn on camera'}
             >
@@ -664,8 +704,52 @@ export default function InterviewRoomPage() {
           <div className="w-10" aria-hidden />
         </div>
 
-        {/* Transcript */}
-        <div className="mt-6 rounded-2xl bg-slate-800 p-4 sm:p-5">
+        {/* Mobile Controls (hidden on desktop) */}
+        <div className="mt-8 flex md:hidden justify-center items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setMicOn((on) => !on)}
+            className={`rounded-full p-4 shadow-md transition-all active:scale-95 cursor-pointer ${micOn
+              ? 'bg-slate-800 text-white hover:bg-slate-700 border border-slate-700'
+              : 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
+              }`}
+            aria-label={micOn ? 'Mute microphone' : 'Unmute microphone'}
+          >
+            {micOn ? (
+              <Mic className="h-5 w-5" />
+            ) : (
+              <MicOff className="h-5 w-5" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleEndCall}
+            className="rounded-full bg-red-650 text-white p-4 shadow-lg shadow-red-950/20 transition-all hover:bg-red-700 active:scale-95 cursor-pointer"
+            aria-label="End call"
+          >
+            <PhoneOff className="h-5 w-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCameraOn((on) => !on)}
+            className={`rounded-full p-4 shadow-md transition-all active:scale-95 cursor-pointer ${cameraOn
+              ? 'bg-slate-800 text-white hover:bg-slate-700 border border-slate-700'
+              : 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
+              }`}
+            aria-label={cameraOn ? 'Turn off camera' : 'Turn on camera'}
+          >
+            {cameraOn ? (
+              <Video className="h-5 w-5" />
+            ) : (
+              <VideoOff className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+
+        {/* Desktop Transcript (hidden on mobile) */}
+        <div className="mt-6 hidden md:block rounded-2xl bg-slate-800 p-4 sm:p-5">
           <div className="flex gap-3">
             <div className="mt-0.5 shrink-0">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-sm font-bold text-white">
@@ -697,6 +781,36 @@ export default function InterviewRoomPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Mobile Question & Transcript (hidden on desktop) */}
+        <div className="mt-8 flex md:hidden flex-col items-center text-center px-4 max-w-2xl mx-auto gap-4">
+          {error ? (
+            <p className="text-red-400 text-sm font-medium">{error}</p>
+          ) : (
+            <>
+              {question && (
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wider text-violet-400 font-bold">
+                    Question
+                  </p>
+                  <h2 className="text-base font-bold text-white leading-relaxed">
+                    {question}
+                  </h2>
+                </div>
+              )}
+              {transcript && (
+                <div className="space-y-1 mt-2">
+                  <p className="text-xs uppercase tracking-wider text-sky-400 font-bold">
+                    Your Answer
+                  </p>
+                  <p className="text-sm text-slate-400 leading-relaxed italic">
+                    "{transcript}"
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

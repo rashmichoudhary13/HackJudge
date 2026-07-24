@@ -84,7 +84,7 @@ export const startInterview = async (req, res) => {
             });
 
             await db.collection('projects').doc(projectId).update({
-                fileUri: uploadedFile.uri
+                fileUri: uploadedFile.uri   // Helps to access same file again without reuploading to gemini
             });
 
             contents.push({

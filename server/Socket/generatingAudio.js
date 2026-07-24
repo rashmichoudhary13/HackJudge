@@ -50,7 +50,7 @@ export async function streamTTS(text, client) {
             if (client.readyState === 1 && (chunk instanceof Uint8Array || Buffer.isBuffer(chunk))) { // WebSocket.OPEN is 1
                 client.send(JSON.stringify({
                     type: "audio_chunk",
-                    audio: Buffer.from(chunk).toString("base64")
+                    audio: Buffer.from(chunk).toString("base64")   // Create buffer from chunk data
                 }));
             }
         }

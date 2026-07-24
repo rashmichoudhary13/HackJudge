@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [selectedAttemptIdx, setSelectedAttemptIdx] = useState(0)
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
   const selectedProject = project[selectedIdx]
 
@@ -96,12 +97,15 @@ export default function DashboardPage() {
     })
   }
 
-  const handleDelete = async () => {
-    try {
-      const projectId = selectedProject?.projectId;
-      if (!projectId) return;
+  const handleDelete = async (projectIdToDelete) => {
+    const idToUse = (typeof projectIdToDelete === 'string')
+      ? projectIdToDelete
+      : selectedProject?.projectId;
 
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/delete/${projectId}`, {
+    if (!idToUse) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/delete/${idToUse}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -112,11 +116,17 @@ export default function DashboardPage() {
         console.error("Can't delete the project");
       }
 
-      const result = await response.json();
-
-      const filteredProject = project.filter((item) => item.projectId !== selectedProject.projectId);
+      const filteredProject = project.filter((item) => item.projectId !== idToUse);
       setProjects(filteredProject);
-      setSelectedIdx(0);
+
+      if (selectedProject?.projectId === idToUse) {
+        setSelectedIdx(0);
+        setSelectedAttemptIdx(0);
+      } else {
+        const currentSelectedId = selectedProject?.projectId;
+        const newIdx = filteredProject.findIndex(item => item.projectId === currentSelectedId);
+        setSelectedIdx(newIdx >= 0 ? newIdx : 0);
+      }
     } catch (err) {
       console.error("Error deleting a project: ", err);
     }
@@ -158,12 +168,22 @@ export default function DashboardPage() {
                     {userEmail}
                   </p>
                 </div>
+                {/* Mobile Projects Toggle Button */}
+                <button
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                  className="mt-1.5 flex md:hidden items-center gap-1.5 rounded-lg border border-violet-150 bg-violet-50/50 px-3 py-1.5 text-xs font-semibold text-violet-750 hover:bg-violet-100 active:scale-95 transition cursor-pointer shadow-sm shadow-violet-100/30"
+                >
+                  <svg className="h-3.5 w-3.5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  <span>Select Project</span>
+                </button>
               </div>
 
-              <hr className="border-slate-200" />
+              <hr className="border-slate-200 hidden md:block" />
 
               {/* Projects Section */}
-              <div className="flex flex-col gap-3">
+              <div className=" hidden md:flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Projects &gt;
@@ -194,7 +214,15 @@ export default function DashboardPage() {
                       </svg>
                       <span className="truncate">{proj.project.Title}</span>
 
-                      <div onClick={handleDelete} className='ml-auto cursor-pointer hover:bg-red-200 w-5 h-5 rounded-xl'> <HiOutlineTrash className='text-red-500 mx-auto my-auto' /> </div>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(proj.projectId);
+                        }}
+                        className='ml-auto cursor-pointer hover:bg-red-200 w-5 h-5 rounded-xl flex items-center justify-center'
+                      >
+                        <HiOutlineTrash className='text-red-500' />
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -759,6 +787,82 @@ export default function DashboardPage() {
                 >
                   Dismiss
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+
+            {/* Sidebar content panel */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="relative flex w-full max-w-xs flex-col bg-white p-6 shadow-2xl"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              {/* Projects Section */}
+              <div className="flex flex-col gap-3 flex-1 overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Projects &gt;
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2 overflow-y-auto pr-1 flex-1">
+                  {project.map((proj, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedIdx(idx)
+                        setSelectedAttemptIdx(0)
+                        setIsMobileSidebarOpen(false)
+                      }}
+                      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition text-left cursor-pointer ${selectedIdx === idx
+                        ? 'border-violet-200 bg-violet-50 text-violet-750 shadow-sm shadow-violet-100/50'
+                        : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                    >
+                      <svg className={`h-4 w-4 shrink-0 ${selectedIdx === idx ? 'text-violet-600' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      <span className="truncate">{proj.project.Title}</span>
+
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(proj.projectId);
+                        }}
+                        className='ml-auto cursor-pointer hover:bg-red-200 w-5 h-5 rounded-xl flex items-center justify-center'
+                      >
+                        <HiOutlineTrash className='text-red-500' />
+                      </div>
+                    </button>
+                  ))}
+                  {project.length === 0 && (
+                    <p className="text-xs text-slate-400 italic text-center py-4">No projects yet</p>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>

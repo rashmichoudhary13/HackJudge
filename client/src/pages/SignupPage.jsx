@@ -66,7 +66,7 @@ export default function SignupPage() {
       <Navbar
         variant="minimal"
         trailing={
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 mr-5 md:mr-0">
             Already have an account?{' '}
             <Link
               to="/login"

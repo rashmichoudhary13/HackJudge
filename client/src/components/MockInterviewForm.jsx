@@ -256,7 +256,7 @@ export default function MockInterviewForm({ className = '' }) {
           Select Judge <span className="text-red-400">*</span>
         </label>
 
-        <div className='flex justify-between mb-5'>
+        <div className='flex flex-col gap-2 md:flex-row justify-between mb-5'>
           {categories.map((category) => (
             <div key={category}>
               <input
